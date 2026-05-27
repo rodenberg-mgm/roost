@@ -42,6 +42,28 @@
 }
 
 @layer base {
+  :root {
+    --background: oklch(0.97 0.005 60);
+    --foreground: oklch(0.23 0.02 40);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.23 0.02 40);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.23 0.02 40);
+    --primary: oklch(0.39 0.06 145);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.94 0.01 80);
+    --secondary-foreground: oklch(0.23 0.02 40);
+    --muted: oklch(0.94 0.01 80);
+    --muted-foreground: oklch(0.45 0.02 40);
+    --accent: oklch(0.94 0.01 80);
+    --accent-foreground: oklch(0.23 0.02 40);
+    --destructive: oklch(0.55 0.18 25);
+    --border: oklch(0.88 0.01 80);
+    --input: oklch(0.88 0.01 80);
+    --ring: oklch(0.39 0.06 145);
+    --radius: 0.5rem;
+  }
+
   body {
     background-color: var(--color-page);
     color: var(--color-ink);
