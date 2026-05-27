@@ -63,6 +63,73 @@ export async function createTrip(input: CreateTripInput) {
   redirect(`/trips/${trip.id}`);
 }
 
+export async function updateTrip(tripId: string, input: {
+  name?: string;
+  starts_on?: string | null;
+  ends_on?: string | null;
+  city?: string;
+  region?: string;
+  house_rules?: string;
+  local_tips?: string;
+  stocked_items?: string[];
+  wifi_ssid?: string;
+  wifi_password?: string;
+  door_code?: string;
+  gate_code?: string;
+  address_line?: string;
+  postal_code?: string;
+  parking_notes?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Not authenticated" };
+  }
+
+  const { wifi_ssid, wifi_password, door_code, gate_code, address_line, postal_code, parking_notes, ...tripFields } = input;
+
+  // Update trip (non-sensitive)
+  const updateData: Record<string, unknown> = {};
+  if (tripFields.name !== undefined) updateData.name = tripFields.name;
+  if (tripFields.starts_on !== undefined) updateData.starts_on = tripFields.starts_on;
+  if (tripFields.ends_on !== undefined) updateData.ends_on = tripFields.ends_on;
+  if (tripFields.city !== undefined) updateData.city = tripFields.city;
+  if (tripFields.region !== undefined) updateData.region = tripFields.region;
+  if (tripFields.house_rules !== undefined) updateData.house_rules = tripFields.house_rules;
+  if (tripFields.local_tips !== undefined) updateData.local_tips = tripFields.local_tips;
+  if (tripFields.stocked_items !== undefined) updateData.stocked_items = tripFields.stocked_items;
+
+  if (Object.keys(updateData).length > 0) {
+    const { error } = await supabase
+      .from("trips")
+      .update(updateData)
+      .eq("id", tripId);
+
+    if (error) return { error: error.message };
+  }
+
+  // Update sensitive fields
+  const sensitiveData: Record<string, unknown> = {};
+  if (wifi_ssid !== undefined) sensitiveData.wifi_ssid = wifi_ssid;
+  if (wifi_password !== undefined) sensitiveData.wifi_password = wifi_password;
+  if (door_code !== undefined) sensitiveData.door_code = door_code;
+  if (gate_code !== undefined) sensitiveData.gate_code = gate_code;
+  if (address_line !== undefined) sensitiveData.address_line = address_line;
+  if (postal_code !== undefined) sensitiveData.postal_code = postal_code;
+  if (parking_notes !== undefined) sensitiveData.parking_notes = parking_notes;
+
+  if (Object.keys(sensitiveData).length > 0) {
+    const { error } = await supabase
+      .from("trip_sensitive_info")
+      .update(sensitiveData)
+      .eq("trip_id", tripId);
+
+    if (error) return { error: error.message };
+  }
+
+  return { success: true };
+}
+
 async function syncPropertyToTrip(
   supabase: Awaited<ReturnType<typeof createClient>>,
   tripId: string,
