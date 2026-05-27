@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-kraft: #C2B8A3;
+  --color-kraft-light: #D4CCBB;
+  --color-kraft-dark: #A89E8B;
+  --color-fern: #3F6A47;
+  --color-fern-light: #5A8A63;
+  --color-fern-dark: #2D4E33;
+  --color-birch: #A4B08E;
+  --color-birch-light: #BCC5AB;
+  --color-birch-dark: #8A9A72;
+  --color-roost: #917E6C;
+  --color-roost-light: #AB9A8A;
+  --color-roost-dark: #756453;
+  --color-sage: #A4AD8E;
+  --color-sage-light: #BCC3AB;
+  --color-sage-dark: #8A9572;
+  --color-sand: #C8B99A;
+  --color-sand-light: #D9CDAF;
+  --color-sand-dark: #B0A080;
+  --color-ink: #3B3028;
+  --color-ink-light: #5C4F44;
+  --color-ink-dark: #261E17;
+  --color-page: #F5F1EB;
+  --color-card: #FFFFFF;
+  --color-card-hover: #FAFAF8;
+  --font-display: "Silene Brock", Georgia, "Times New Roman", serif;
+  --font-body: "Roslindale", Georgia, "Times New Roman", serif;
+  --font-mono: "CoFo Sans Mono", "SF Mono", "Fira Code", "Fira Mono", monospace;
+  --font-sans: "Roslindale", Georgia, "Times New Roman", serif;
+  --spacing-18: 4.5rem;
+  --spacing-88: 22rem;
+  --radius-card: 1.5rem;
+  --radius-button: 0.75rem;
+  --radius-input: 0.5rem;
+  --radius-badge: 9999px;
+  --shadow-card: 0 1px 3px rgba(59, 48, 40, 0.06), 0 1px 2px rgba(59, 48, 40, 0.04);
+  --shadow-card-hover: 0 4px 12px rgba(59, 48, 40, 0.08), 0 2px 4px rgba(59, 48, 40, 0.04);
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
