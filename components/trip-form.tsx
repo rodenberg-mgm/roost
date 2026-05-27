@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PropertyPicker } from "@/components/property-picker";
 import { createTrip } from "@/lib/actions/trips";
 import type { CreateTripInput } from "@/lib/schemas/trip";
 import { Loader2 } from "lucide-react";
@@ -23,6 +24,7 @@ export function TripForm({ properties }: TripFormProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [datesTbd, setDatesTbd] = useState(false);
+  const [propertyId, setPropertyId] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,7 +39,7 @@ export function TripForm({ properties }: TripFormProps) {
       ends_on: datesTbd ? null : (formData.get("ends_on") as string) || null,
       city: (formData.get("city") as string) || undefined,
       region: (formData.get("region") as string) || undefined,
-      property_id: null,
+      property_id: propertyId,
     };
 
     const result = await createTrip(input);
@@ -101,6 +103,18 @@ export function TripForm({ properties }: TripFormProps) {
           <Label htmlFor="region">State / Region</Label>
           <Input id="region" name="region" placeholder="California" />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Property (optional)</Label>
+        <p className="text-xs text-ink-light">
+          Link a saved property to auto-fill wifi, rules, and more.
+        </p>
+        <PropertyPicker
+          properties={properties}
+          selectedId={propertyId}
+          onSelect={setPropertyId}
+        />
       </div>
 
       {errors._form && (
