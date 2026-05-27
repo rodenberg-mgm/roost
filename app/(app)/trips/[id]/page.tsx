@@ -1,4 +1,5 @@
 import { TripInfoSection } from "@/components/trip-info-section";
+import { SensitiveInfoSection } from "@/components/sensitive-info-section";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -39,6 +40,31 @@ export default async function TripPage({ params }: TripPageProps) {
     .from("trip_members")
     .select("id, role, joined_at, invited_email, user_id, users:user_id(display_name, email)")
     .eq("trip_id", id);
+
+  // Fetch sensitive info (RLS allows host/co-host or users with sensitive grant)
+  const { data: sensitiveInfo } = await supabase
+    .from("trip_sensitive_info")
+    .select("*")
+    .eq("trip_id", id)
+    .single();
+
+  // Check if user has a sensitive grant
+  const { data: sensitiveGrant } = await supabase
+    .from("trip_grants")
+    .select("level")
+    .eq("trip_id", id)
+    .eq("user_id", membership.userId)
+    .eq("level", "sensitive")
+    .single();
+
+  const hasSensitiveAccess = isHostRole(membership.role) || !!sensitiveGrant;
+
+  // Fetch user email for reveal dialog
+  const { data: currentUser } = await supabase
+    .from("users")
+    .select("email")
+    .eq("id", membership.userId)
+    .single();
 
   const canEdit = isHostRole(membership.role);
 
@@ -184,6 +210,16 @@ export default async function TripPage({ params }: TripPageProps) {
             </ul>
           </TripInfoSection>
         )}
+
+        {/* Sensitive Info */}
+        <SensitiveInfoSection
+          tripId={id}
+          userEmail={currentUser?.email || ""}
+          userRole={membership.role}
+          requirePin={trip.require_pin_to_view}
+          initialData={sensitiveInfo}
+          hasAccess={hasSensitiveAccess}
+        />
       </div>
     </div>
   );
