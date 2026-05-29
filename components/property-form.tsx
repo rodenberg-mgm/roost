@@ -6,37 +6,44 @@ import { Label } from "@/components/ui/label";
 import { createProperty } from "@/lib/actions/properties";
 import type { CreatePropertyInput } from "@/lib/schemas/property";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface PropertyFormProps {
   onSuccess?: (propertyId: string) => void;
   onCancel?: () => void;
+  /** When true, renders as a div instead of form to avoid nested-form hydration errors */
+  inline?: boolean;
 }
 
-export function PropertyForm({ onSuccess, onCancel }: PropertyFormProps) {
+export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function getInputValue(name: string): string {
+    if (!containerRef.current) return "";
+    const el = containerRef.current.querySelector(`[name="${name}"]`) as HTMLInputElement | HTMLTextAreaElement | null;
+    return el?.value || "";
+  }
+
+  async function handleSubmit(e?: React.FormEvent<HTMLFormElement>) {
+    e?.preventDefault();
     setLoading(true);
     setErrors({});
 
-    const fd = new FormData(e.currentTarget);
-
     const input: CreatePropertyInput = {
-      name: fd.get("name") as string,
-      city: (fd.get("city") as string) || undefined,
-      region: (fd.get("region") as string) || undefined,
-      house_rules: (fd.get("house_rules") as string) || undefined,
-      local_tips: (fd.get("local_tips") as string) || undefined,
-      wifi_ssid: (fd.get("wifi_ssid") as string) || undefined,
-      wifi_password: (fd.get("wifi_password") as string) || undefined,
-      door_code: (fd.get("door_code") as string) || undefined,
-      gate_code: (fd.get("gate_code") as string) || undefined,
-      address_line: (fd.get("address_line") as string) || undefined,
-      postal_code: (fd.get("postal_code") as string) || undefined,
-      parking_notes: (fd.get("parking_notes") as string) || undefined,
+      name: getInputValue("name"),
+      city: getInputValue("city") || undefined,
+      region: getInputValue("region") || undefined,
+      house_rules: getInputValue("house_rules") || undefined,
+      local_tips: getInputValue("local_tips") || undefined,
+      wifi_ssid: getInputValue("wifi_ssid") || undefined,
+      wifi_password: getInputValue("wifi_password") || undefined,
+      door_code: getInputValue("door_code") || undefined,
+      gate_code: getInputValue("gate_code") || undefined,
+      address_line: getInputValue("address_line") || undefined,
+      postal_code: getInputValue("postal_code") || undefined,
+      parking_notes: getInputValue("parking_notes") || undefined,
     };
 
     const result = await createProperty(input);
@@ -54,7 +61,7 @@ export function PropertyForm({ onSuccess, onCancel }: PropertyFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div ref={containerRef} className="space-y-6">
       {/* Property details section */}
       <div className="space-y-4">
         <h3 className="font-semibold text-ink">Property details</h3>
@@ -160,7 +167,8 @@ export function PropertyForm({ onSuccess, onCancel }: PropertyFormProps) {
           </Button>
         )}
         <Button
-          type="submit"
+          type="button"
+          onClick={() => handleSubmit()}
           className="flex-1 bg-forest text-white hover:bg-forest-dark"
           disabled={loading}
         >
@@ -174,6 +182,6 @@ export function PropertyForm({ onSuccess, onCancel }: PropertyFormProps) {
           )}
         </Button>
       </div>
-    </form>
+    </div>
   );
 }

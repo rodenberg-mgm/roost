@@ -25,6 +25,7 @@ export function PropertyPicker({ properties, selectedId, onSelect }: PropertyPic
     return (
       <div className="rounded-card border border-sand p-4">
         <PropertyForm
+          inline
           onSuccess={(id) => {
             onSelect(id);
             setShowCreate(false);
