@@ -96,7 +96,7 @@ export function InviteForm({ tripId }: InviteFormProps) {
       <button
         type="button"
         onClick={addEmail}
-        className="flex items-center gap-1 text-sm text-fern hover:text-fern-dark"
+        className="flex items-center gap-1 text-sm text-forest hover:text-forest-dark"
       >
         <Plus className="h-4 w-4" />
         Add another
@@ -109,7 +109,7 @@ export function InviteForm({ tripId }: InviteFormProps) {
           {results.map((r, i) => (
             <div key={i} className="flex items-center gap-2 text-sm">
               {r.success ? (
-                <Check className="h-4 w-4 text-fern" />
+                <Check className="h-4 w-4 text-forest" />
               ) : (
                 <X className="h-4 w-4 text-red-500" />
               )}
@@ -122,7 +122,7 @@ export function InviteForm({ tripId }: InviteFormProps) {
 
       <Button
         type="submit"
-        className="w-full bg-fern text-white hover:bg-fern-dark"
+        className="w-full bg-forest text-white hover:bg-forest-dark"
         disabled={loading}
       >
         {loading ? (

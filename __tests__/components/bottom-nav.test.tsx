@@ -17,6 +17,6 @@ describe("BottomNav", () => {
   it("highlights the active route", () => {
     render(<BottomNav />);
     const myTrips = screen.getByText("My Trips").closest("a");
-    expect(myTrips?.className).toContain("text-fern");
+    expect(myTrips?.className).toContain("text-forest");
   });
 });

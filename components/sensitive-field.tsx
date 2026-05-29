@@ -20,7 +20,7 @@ export function SensitiveField({ label, value, revealed, onRevealRequest }: Sens
       ) : (
         <button
           onClick={onRevealRequest}
-          className="flex items-center gap-1 text-sm text-fern hover:text-fern-dark"
+          className="flex items-center gap-1 text-sm text-forest hover:text-forest-dark"
         >
           <span>••••••</span>
           <Eye className="h-3.5 w-3.5" />

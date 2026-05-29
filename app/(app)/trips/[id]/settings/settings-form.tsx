@@ -63,7 +63,7 @@ export function SettingsForm({ tripId, requirePin, hasPin }: SettingsFormProps) 
             type="button"
             onClick={() => setPinEnabled(!pinEnabled)}
             className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-              pinEnabled ? "bg-fern" : "bg-sand"
+              pinEnabled ? "bg-forest" : "bg-sand"
             }`}
           >
             <span
@@ -94,7 +94,7 @@ export function SettingsForm({ tripId, requirePin, hasPin }: SettingsFormProps) 
 
       <Button
         onClick={handleSave}
-        className="w-full bg-fern text-white hover:bg-fern-dark"
+        className="w-full bg-forest text-white hover:bg-forest-dark"
         disabled={loading}
       >
         {loading ? (

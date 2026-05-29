@@ -22,7 +22,7 @@ export default async function PropertiesPage() {
         {properties.length > 0 && (
           <Link
             href="/properties/new"
-            className="flex h-9 w-9 items-center justify-center rounded-button bg-fern text-white hover:bg-fern-dark"
+            className="flex h-9 w-9 items-center justify-center rounded-button bg-forest text-white hover:bg-forest-dark"
           >
             <Plus className="h-5 w-5" />
           </Link>
@@ -41,7 +41,7 @@ export default async function PropertiesPage() {
           {properties.map((p) => (
             <div
               key={p.id}
-              className="flex items-center gap-3 rounded-card bg-card p-4 shadow-card"
+              className="flex items-center gap-3 rounded-card border bg-card p-4 shadow-card"
             >
               <Home className="h-5 w-5 text-roost" />
               <div>

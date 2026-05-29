@@ -46,8 +46,8 @@ export function PropertyPicker({ properties, selectedId, onSelect }: PropertyPic
               onClick={() => onSelect(selectedId === p.id ? null : p.id)}
               className={`flex w-full items-center gap-3 rounded-card border p-3 text-left text-sm transition-colors ${
                 selectedId === p.id
-                  ? "border-fern bg-fern/5 text-ink"
-                  : "border-sand bg-card text-ink-light hover:border-fern/30"
+                  ? "border-forest bg-forest/5 text-ink"
+                  : "border-sand bg-card text-ink-light hover:border-forest/30"
               }`}
             >
               <Home className="h-4 w-4 shrink-0" />

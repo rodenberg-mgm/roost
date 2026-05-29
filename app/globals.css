@@ -1,67 +1,86 @@
 @import "tailwindcss";
 
 @theme {
-  --color-kraft: #C2B8A3;
-  --color-kraft-light: #D4CCBB;
-  --color-kraft-dark: #A89E8B;
-  --color-fern: #3F6A47;
-  --color-fern-light: #5A8A63;
-  --color-fern-dark: #2D4E33;
-  --color-birch: #A4B08E;
-  --color-birch-light: #BCC5AB;
-  --color-birch-dark: #8A9A72;
-  --color-roost: #917E6C;
-  --color-roost-light: #AB9A8A;
-  --color-roost-dark: #756453;
-  --color-sage: #A4AD8E;
-  --color-sage-light: #BCC3AB;
-  --color-sage-dark: #8A9572;
-  --color-sand: #C8B99A;
-  --color-sand-light: #D9CDAF;
-  --color-sand-dark: #B0A080;
-  --color-ink: #3B3028;
+  /* ── Brand Kit Colors (from branding/brand-kit.png) ── */
+  --color-kraft: #D9C9A8;
+  --color-kraft-light: #E5D9C0;
+  --color-kraft-dark: #C4B490;
+  --color-forest: #2F4A37;
+  --color-forest-light: #3D6147;
+  --color-forest-dark: #213528;
+  --color-brick: #A04A32;
+  --color-brick-light: #B85E45;
+  --color-brick-dark: #863D29;
+  --color-bone: #F1EBDC;
+  --color-bone-light: #F7F3E9;
+  --color-bone-dark: #E5DCCB;
+  --color-sage: #A7B49A;
+  --color-sage-light: #BCC7B2;
+  --color-sage-dark: #8E9D82;
+  --color-sand: #E6D9BF;
+  --color-sand-light: #EDE3D0;
+  --color-sand-dark: #D4C5A8;
+  --color-ink: #2B2B2B;
   --color-ink-light: #5C4F44;
-  --color-ink-dark: #261E17;
-  --color-page: #F5F1EB;
-  --color-card: #FFFFFF;
-  --color-card-hover: #FAFAF8;
-  --font-display: "Silene Brock", Georgia, "Times New Roman", serif;
-  --font-body: "Roslindale", Georgia, "Times New Roman", serif;
-  --font-mono: "CoFo Sans Mono", "SF Mono", "Fira Code", "Fira Mono", monospace;
-  --font-sans: "Roslindale", Georgia, "Times New Roman", serif;
+  --color-ink-dark: #1A1A1A;
+
+  /* ── Semantic aliases ── */
+  --color-page: #F1EBDC;
+  --color-card: #F7F3E9;
+  --color-card-hover: #F1EBDC;
+
+  /* ── Typography (brand kit: Söhne Breit/Druk, Roslindale, CoFo Sans Mono) ── */
+  --font-display: "Sohne Breit", "Druk", "Impact", "Arial Black", sans-serif;
+  --font-body: "Roslindale", "Untitled Serif", Georgia, "Times New Roman", serif;
+  --font-mono: "CoFo Sans Mono", ui-monospace, "SF Mono", "Fira Code", monospace;
+  --font-sans: "Roslindale", "Untitled Serif", Georgia, "Times New Roman", serif;
+
+  /* ── Spacing ── */
   --spacing-18: 4.5rem;
   --spacing-88: 22rem;
-  --radius-card: 1.5rem;
-  --radius-button: 0.75rem;
-  --radius-input: 0.5rem;
-  --radius-badge: 9999px;
-  --shadow-card: 0 1px 3px rgba(59, 48, 40, 0.06), 0 1px 2px rgba(59, 48, 40, 0.04);
-  --shadow-card-hover: 0 4px 12px rgba(59, 48, 40, 0.08), 0 2px 4px rgba(59, 48, 40, 0.04);
+
+  /* ── Radii (from brand kit: button 18px, card 20px, input 14px) ── */
+  --radius-card: 1.25rem;
+  --radius-button: 1.125rem;
+  --radius-input: 0.875rem;
+  --radius-badge: 6px;
+  --radius-stamp: 6px;
+
+  /* ── Shadows (forest-green tinted per brand kit) ── */
+  --shadow-card: 0 6px 18px rgba(47, 74, 55, 0.08);
+  --shadow-card-hover: 0 8px 24px rgba(47, 74, 55, 0.12);
+  --shadow-button: 0 2px 12px rgba(47, 74, 55, 0.15);
+
+  /* ── Borders (brand kit: 1px solid rgba(47,74,55,.12)) ── */
+  --border-subtle: rgba(47, 74, 55, 0.12);
+
+  /* ── Transitions ── */
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
 }
 
 @layer base {
   :root {
-    --background: oklch(0.97 0.005 60);
-    --foreground: oklch(0.23 0.02 40);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.23 0.02 40);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.23 0.02 40);
-    --primary: oklch(0.39 0.06 145);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.94 0.01 80);
-    --secondary-foreground: oklch(0.23 0.02 40);
-    --muted: oklch(0.94 0.01 80);
-    --muted-foreground: oklch(0.45 0.02 40);
-    --accent: oklch(0.94 0.01 80);
-    --accent-foreground: oklch(0.23 0.02 40);
-    --destructive: oklch(0.55 0.18 25);
-    --border: oklch(0.88 0.01 80);
-    --input: oklch(0.88 0.01 80);
-    --ring: oklch(0.39 0.06 145);
-    --radius: 0.5rem;
+    /* shadcn semantic tokens mapped to Roost brand */
+    --background: var(--color-page);
+    --foreground: var(--color-ink);
+    --card: var(--color-card);
+    --card-foreground: var(--color-ink);
+    --popover: var(--color-card);
+    --popover-foreground: var(--color-ink);
+    --primary: var(--color-forest);
+    --primary-foreground: var(--color-bone-light);
+    --secondary: var(--color-sand);
+    --secondary-foreground: var(--color-ink);
+    --muted: var(--color-sand-light);
+    --muted-foreground: var(--color-ink-light);
+    --accent: var(--color-sage);
+    --accent-foreground: var(--color-ink);
+    --destructive: var(--color-brick);
+    --border: var(--border-subtle);
+    --input: var(--border-subtle);
+    --ring: var(--color-forest);
+    --radius: 0.875rem;
   }
 
   body {
@@ -74,6 +93,53 @@
 
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Brand Kit: Stamp badge treatment ── */
+  .stamp {
+    display: inline-block;
+    padding: 2px 10px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-bone);
+    background-color: var(--color-brick);
+    border-radius: var(--radius-stamp);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+
+  .stamp--forest {
+    background-color: var(--color-forest);
+  }
+
+  .stamp--kraft {
+    color: var(--color-ink);
+    background-color: var(--color-kraft);
+  }
+
+  /* ── Brand Kit: Card with border ── */
+  .card-brand {
+    background-color: var(--color-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* ── Brand Kit: Kraft paper texture overlay ── */
+  .kraft-bg {
+    position: relative;
+    background-color: var(--color-kraft);
+    background-image:
+      url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");
+  }
+
+  /* ── Brand Kit: Topo line pattern for empty states ── */
+  .topo-bg {
+    background-color: var(--color-bone);
+    background-image:
+      url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 80 Q30 60 50 70 T90 50' fill='none' stroke='%23A7B49A' stroke-width='.5' opacity='.3'/%3E%3Cpath d='M0 60 Q25 40 50 50 T100 30' fill='none' stroke='%23A7B49A' stroke-width='.5' opacity='.25'/%3E%3Cpath d='M5 40 Q30 20 55 30 T95 10' fill='none' stroke='%23A7B49A' stroke-width='.5' opacity='.2'/%3E%3C/svg%3E");
   }
 
   @media (prefers-reduced-motion: reduce) {

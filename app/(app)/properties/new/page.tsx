@@ -18,7 +18,7 @@ export default function NewPropertyPage() {
           Save property details so they auto-fill when you create trips.
         </p>
       </header>
-      <div className="rounded-card bg-card p-6 shadow-card">
+      <div className="rounded-card border bg-card p-6 shadow-card">
         <PropertyPageContent />
       </div>
     </div>

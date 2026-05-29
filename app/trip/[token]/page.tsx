@@ -1,5 +1,6 @@
 // app/trip/[token]/page.tsx
 import { TripInfoSection } from "@/components/trip-info-section";
+import { StampBadge } from "@/components/stamp-badge";
 import { validateInviteToken } from "@/lib/trip-access/validate-token";
 import { createServiceClient, createClient } from "@/lib/supabase/server";
 import {
@@ -32,7 +33,7 @@ export default async function TripViewPage({ params }: TripViewProps) {
           <p className="mt-2 text-sm text-ink-light">
             This invite link is no longer valid. Ask your host for a new one.
           </p>
-          <Link href="/" className="mt-4 inline-block text-sm text-fern hover:text-fern-dark">
+          <Link href="/" className="mt-4 inline-block text-sm text-forest hover:text-forest-dark">
             Go to Roost
           </Link>
         </div>
@@ -111,9 +112,9 @@ export default async function TripViewPage({ params }: TripViewProps) {
     <main className="min-h-screen bg-page pb-20">
       <div className="mx-auto max-w-lg px-4 pt-6">
         <header className="mb-6">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-fern">
-            You&apos;re invited
-          </p>
+          <div className="mb-2">
+            <StampBadge variant="forest">You&apos;re Invited</StampBadge>
+          </div>
           <h1 className="font-display text-2xl font-bold text-ink">{trip.name}</h1>
           {(trip.city || trip.region) && (
             <p className="mt-1 text-sm text-ink-light">
@@ -180,14 +181,14 @@ export default async function TripViewPage({ params }: TripViewProps) {
             </p>
           </TripInfoSection>
 
-          <div className="rounded-card bg-fern/5 p-5 text-center">
+          <div className="rounded-card bg-forest/5 p-5 text-center">
             <h3 className="font-semibold text-ink">Want to claim items or see more?</h3>
             <p className="mt-1 text-sm text-ink-light">
               Just need your name and email to join.
             </p>
             <Link
               href={`/trip/${token}/join`}
-              className="mt-4 inline-block rounded-button bg-fern px-6 py-2.5 text-sm font-medium text-white hover:bg-fern-dark"
+              className="mt-4 inline-block rounded-button bg-forest px-6 py-2.5 text-sm font-medium text-white hover:bg-forest-dark"
             >
               Join this trip
             </Link>

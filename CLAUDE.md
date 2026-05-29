@@ -115,7 +115,7 @@ Each phase ships a usable, testable thing. We do **not** build broad-but-shallow
 | Layer | Choice | Why |
 |---|---|---|
 | Framework | **Next.js 15 (App Router) + TypeScript** | Same as Hearth; SSR for marketing, server actions for forms |
-| Styling | **Tailwind CSS v4** + custom Roost design tokens | Brand-kit palette (Kraft/Fern/Birch/Roost/Sage/Sand/Ink) |
+| Styling | **Tailwind CSS v4** + custom Roost design tokens | Brand-kit palette (Kraft/Forest/Brick/Bone/Sage/Sand/Ink) |
 | UI primitives | **shadcn/ui** + custom Roost components | Headless, ownable |
 | Icons | **Lucide** (SVG) — *never* emoji | Consistent with Hearth convention |
 | Forms | **react-hook-form + zod** | Type-safe, performant |
@@ -178,7 +178,7 @@ No "Great question!" No "Excellent idea!" No padding. Direct, brief, technical. 
 - **All photo uploads go through `lib/storage/`** — never call Supabase Storage directly from components.
 - **All realtime subscriptions go through `lib/realtime/use-trip-channel.ts`** — one channel per trip, one hook to manage it.
 - Use Lucide icons. Always SVG, never emoji.
-- Match the brand language: Silene Brock display, Roslindale body, CoFo Sans Mono accent, Kraft/Fern/Birch/Roost/Sage/Sand/Ink palette, rounded cards, stamp/letterpress textures.
+- Match the brand language exactly per the brand kit reference below (§14).
 - Design mobile-first (375px). Test at 375 / 768 / 1024 / 1440.
 - Surface 2–3 options before building a non-trivial feature (§6).
 - Write tests for anything involving money (when expenses land in v2.0). Use integers + cents, never floats.
@@ -362,3 +362,65 @@ roost/
 - Open Decisions (§9) move to `decisions/NN-decision-name.md` once closed. Date stamp them.
 - Sections 4 (roadmap) and 10 (feature triage) decay fastest; review at phase boundaries.
 - Sycophancy creeping in? Delete it.
+
+---
+
+## 14. Brand Kit Reference (Authoritative)
+
+**Source of truth:** `branding/brand-kit.png` — always consult this image before making visual decisions. The values below are extracted from that file and must not drift.
+
+### 14.1 Color Palette (exact hex values)
+
+| Token | Hex | Tailwind class | Use |
+|---|---|---|---|
+| Kraft | `#D9C9A8` | `bg-kraft` | Backgrounds, card textures, kraft paper areas |
+| Forest | `#2F4A37` | `bg-forest` | Primary buttons, headings, active nav, links |
+| Brick | `#A04A32` | `bg-brick` | Stamp badges, accent CTA, alert/error |
+| Bone | `#F1EBDC` | `bg-bone` | Page background, card backgrounds (NOT white) |
+| Sage | `#A7B49A` | `bg-sage` | Icons in empty states, secondary accents |
+| Sand | `#E6D9BF` | `bg-sand` | Secondary backgrounds, role badges, dividers |
+| Ink | `#2B2B2B` | `text-ink` | Body text, headings |
+| Ink Light | `#5C4F44` | `text-ink-light` | Secondary text, captions, metadata |
+
+**Critical rule:** Cards are `bg-card` (Bone Light `#F7F3E9`), NOT `bg-white`. The page background is `bg-page` (Bone `#F1EBDC`). There is no pure white anywhere in the Roost palette.
+
+### 14.2 Typography
+
+| Role | Font | Fallback Stack | Tailwind |
+|---|---|---|---|
+| Display | **Söhne Breit / Druk** | Impact, Arial Black, sans-serif | `font-display` |
+| Body | **Roslindale / Untitled Serif** | Georgia, Times New Roman, serif | `font-body` |
+| Mono accent | **CoFo Sans Mono** | ui-monospace, SF Mono, monospace | `font-mono` |
+
+Display font is a **wide, heavy, condensed sans-serif** — used for headings, hero text, trip names. It is NOT a serif or a decorative script. If the custom font isn't loaded, the fallback should still feel bold and wide (Impact/Arial Black).
+
+### 14.3 Component Tokens
+
+| Token | Value | CSS variable |
+|---|---|---|
+| Button radius | `18px` | `--radius-button` |
+| Card radius | `20px` | `--radius-card` |
+| Input radius | `14px` | `--radius-input` |
+| Stamp/badge radius | `6px` | `--radius-stamp` |
+| Card shadow | `0 6px 18px rgba(47,74,55,.08)` | `--shadow-card` |
+| Button shadow | `0 2px 12px rgba(47,74,55,.15)` | `--shadow-button` |
+| Card border | `1px solid rgba(47,74,55,.12)` | `--border-subtle` |
+
+### 14.4 Textures & Patterns
+
+The brand has three signature textures (see §6 in brand-kit.png):
+
+1. **Kraft paper texture** — Use CSS class `kraft-bg` for kraft-colored areas (dashboard header, promotional sections). Applied via inline SVG noise filter.
+2. **Stamp distress** — Use CSS class `stamp` (or `stamp--forest`, `stamp--kraft` variants) for section labels like "THIS WEEKEND", "TRIP GUIDE". Mono font, uppercase, letter-spacing `.08em`.
+3. **Topo line pattern** — Use CSS class `topo-bg` for empty state backgrounds. Subtle sage-colored topographic lines.
+
+### 14.5 Visual Rules (never violate)
+
+- Cards always have a visible border (`border border-subtle` or `border` class)
+- Shadows use forest-green tinted rgba, never gray/neutral rgba
+- Buttons use `shadow-button` drop shadow for depth
+- Section headers on key screens use stamp badge treatment (brick or forest background)
+- Empty states use `topo-bg` background + sage icon color
+- The dashboard header area uses `kraft-bg` for a warm textured feel
+- No pure white (`#FFFFFF`) — warmest white is Bone Light (`#F7F3E9`)
+- Primary interactive color is always Forest, never a generic green/blue

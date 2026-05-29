@@ -49,9 +49,9 @@ export function JoinForm({ token, inviteEmail }: JoinFormProps) {
 
   if (sent) {
     return (
-      <div className="rounded-card bg-card p-6 text-center shadow-card">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-fern/10">
-          <Mail className="h-6 w-6 text-fern" />
+      <div className="rounded-card border bg-card p-6 text-center shadow-card">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-forest/10">
+          <Mail className="h-6 w-6 text-forest" />
         </div>
         <h2 className="text-lg font-semibold text-ink">Check your email</h2>
         <p className="mt-2 text-sm text-ink-light">
@@ -62,7 +62,7 @@ export function JoinForm({ token, inviteEmail }: JoinFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-card bg-card p-6 shadow-card">
+    <form onSubmit={handleSubmit} className="rounded-card border bg-card p-6 shadow-card">
       <h2 className="mb-4 text-lg font-semibold text-ink">Join this trip</h2>
       <p className="mb-4 text-sm text-ink-light">
         Just your name and email — we&apos;ll send a link to confirm.
@@ -97,7 +97,7 @@ export function JoinForm({ token, inviteEmail }: JoinFormProps) {
 
         <Button
           type="submit"
-          className="w-full bg-fern text-white hover:bg-fern-dark"
+          className="w-full bg-forest text-white hover:bg-forest-dark"
           disabled={loading}
         >
           {loading ? (

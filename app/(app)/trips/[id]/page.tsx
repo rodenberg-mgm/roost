@@ -1,5 +1,6 @@
 import { TripInfoSection } from "@/components/trip-info-section";
 import { SensitiveInfoSection } from "@/components/sensitive-info-section";
+import { StampBadge } from "@/components/stamp-badge";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -96,6 +97,7 @@ export default async function TripPage({ params }: TripPageProps) {
           <ArrowLeft className="h-4 w-4" />
           My Trips
         </Link>
+        <StampBadge variant="forest">Trip Guide</StampBadge>
         <div className="flex items-start justify-between">
           <div>
             <h1 className="font-display text-2xl font-bold text-ink">{trip.name}</h1>
@@ -153,7 +155,7 @@ export default async function TripPage({ params }: TripPageProps) {
             canEdit ? (
               <Link
                 href={`/trips/${id}/invite`}
-                className="text-xs text-fern hover:text-fern-dark"
+                className="text-xs text-forest hover:text-forest-dark"
               >
                 Invite
               </Link>

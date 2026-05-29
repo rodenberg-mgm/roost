@@ -44,7 +44,7 @@ export function TripCard({
   return (
     <Link
       href={`/trips/${id}`}
-      className="block rounded-card bg-card p-5 shadow-card transition-shadow hover:shadow-card-hover"
+      className="block rounded-card border bg-card p-5 shadow-card transition-shadow hover:shadow-card-hover"
     >
       <div className="flex items-start justify-between">
         <h3 className="font-display text-lg font-semibold text-ink">{name}</h3>

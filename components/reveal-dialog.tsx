@@ -53,9 +53,9 @@ export function RevealDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4">
-      <div className="w-full max-w-sm rounded-card bg-card p-6 shadow-card-hover">
+      <div className="w-full max-w-sm rounded-card border bg-card p-6 shadow-card-hover">
         <div className="mb-4 flex items-center gap-2">
-          <Lock className="h-5 w-5 text-fern" />
+          <Lock className="h-5 w-5 text-forest" />
           <h3 className="font-semibold text-ink">Verify to reveal</h3>
         </div>
 
@@ -90,7 +90,7 @@ export function RevealDialog({
           </Button>
           <Button
             onClick={handleVerify}
-            className="flex-1 bg-fern text-white hover:bg-fern-dark"
+            className="flex-1 bg-forest text-white hover:bg-forest-dark"
             disabled={loading || (requirePin && !pin)}
           >
             {loading ? (

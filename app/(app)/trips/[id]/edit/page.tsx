@@ -45,7 +45,7 @@ export default async function EditTripPage({ params }: EditPageProps) {
         </Link>
         <h1 className="font-display text-2xl font-bold text-ink">Edit Trip</h1>
       </header>
-      <div className="rounded-card bg-card p-6 shadow-card">
+      <div className="rounded-card border bg-card p-6 shadow-card">
         <EditForm
           tripId={id}
           initialData={{

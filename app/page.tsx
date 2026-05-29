@@ -3,24 +3,42 @@ import Link from "next/link";
 
 export default function LandingPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-page px-4">
+    <main className="topo-bg flex min-h-screen flex-col items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <h1 className="font-display text-5xl font-bold text-fern">Roost</h1>
-        <p className="mt-3 text-lg text-ink-light">
-          Your shared stay, all in one place.
+        {/* Logo text */}
+        <h1 className="font-display text-6xl font-bold uppercase tracking-tight text-forest">
+          Roost
+        </h1>
+
+        {/* Tagline in display font */}
+        <p className="mt-4 font-display text-xl font-bold uppercase leading-tight text-ink">
+          Your shared stay,<br />all in one place.
         </p>
-        <p className="mt-6 text-sm text-ink-light">
-          Trip details, packing lists, meal plans, photos, and
-          more&thinsp;&mdash;&thinsp;so your group chat can go back to being
-          fun.
+
+        {/* Divider line */}
+        <div className="mx-auto mt-4 h-0.5 w-12 bg-brick" />
+
+        {/* Description */}
+        <p className="mt-4 text-sm leading-relaxed text-ink-light">
+          Roost keeps trip details, house info, lists, expenses, and
+          memories together — so you can focus on what matters most.
         </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <Button asChild className="bg-fern text-white hover:bg-fern-dark">
-            <Link href="/login">Get Started</Link>
+
+        {/* CTA */}
+        <div className="mt-8 flex flex-col gap-3">
+          <Button
+            asChild
+            className="w-full bg-forest text-white shadow-button hover:bg-forest-dark"
+            size="lg"
+          >
+            <Link href="/login">Start a Trip</Link>
           </Button>
-          <Button asChild variant="outline" className="border-sand text-ink hover:bg-sand/20">
-            <Link href="/login">Join with invite link</Link>
-          </Button>
+          <Link
+            href="/login"
+            className="inline-block font-mono text-sm text-ink-light underline decoration-sand underline-offset-4 hover:text-ink"
+          >
+            Join with invite link
+          </Link>
         </div>
       </div>
     </main>

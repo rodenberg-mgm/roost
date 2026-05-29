@@ -175,7 +175,7 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
         <Button type="button" variant="outline" className="flex-1" onClick={() => router.back()}>
           Cancel
         </Button>
-        <Button type="submit" className="flex-1 bg-fern text-white hover:bg-fern-dark" disabled={loading}>
+        <Button type="submit" className="flex-1 bg-forest text-white hover:bg-forest-dark" disabled={loading}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
         </Button>
       </div>

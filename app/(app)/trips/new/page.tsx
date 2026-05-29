@@ -21,7 +21,7 @@ export default async function NewTripPage() {
           Name it, pick dates (or leave TBD), and invite your crew.
         </p>
       </header>
-      <div className="rounded-card bg-card p-6 shadow-card">
+      <div className="rounded-card border bg-card p-6 shadow-card">
         <TripForm properties={properties} />
       </div>
     </div>

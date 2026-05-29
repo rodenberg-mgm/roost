@@ -161,7 +161,7 @@ export function PropertyForm({ onSuccess, onCancel }: PropertyFormProps) {
         )}
         <Button
           type="submit"
-          className="flex-1 bg-fern text-white hover:bg-fern-dark"
+          className="flex-1 bg-forest text-white hover:bg-forest-dark"
           disabled={loading}
         >
           {loading ? (
