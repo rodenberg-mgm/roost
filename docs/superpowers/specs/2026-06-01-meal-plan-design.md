@@ -17,7 +17,12 @@ packing list.
   `packing_claims`). A meal slot can have several volunteers.
 - **Any member can create slots** (not host-only) — consistent with packing and
   §3.5 ("everyone can edit").
-- **Shared, slot-level menu/notes**, editable by any member (not per-cook).
+- **Shared, slot-level menu/notes/title**, *visible* to every member but
+  *editable* only by the host or a signed-up cook on that slot.
+- **Slot dates are locked to the trip's date range.** A slot's `day_date` must
+  fall within `[starts_on, ends_on]`; enforced in the UI (date picker min/max)
+  and server-side in `addMealSlot`. If the trip's dates are TBD (either bound
+  null), meal planning is disabled until dates are set.
 - **Manual slot creation** (pick a day + meal type + optional title) — no
   auto-generated grid.
 - **Families/groups are explicitly deferred.** That concept is cross-cutting and
@@ -52,7 +57,9 @@ packing list.
   with member insert. Keep member select/update. Add delete.
   - select: `is_trip_member(trip_id)` (unchanged)
   - insert: `is_trip_member(trip_id) AND created_by_user_id = auth.uid()`
-  - update: `is_trip_member(trip_id)` (unchanged — shared menu/notes/title)
+  - update: `is_trip_host(trip_id) OR exists (select 1 from public.meal_cooks mc
+    where mc.slot_id = meal_slots.id and mc.user_id = auth.uid())` — host or a
+    signed-up cook only (menu/notes/title are shared but write-gated)
   - delete: `created_by_user_id = auth.uid() OR is_trip_host(trip_id)`
 
 - **RLS (`meal_cooks`)** — uses `is_trip_member` / `is_trip_host`:
@@ -104,8 +111,11 @@ Covered by Vitest: empty, single day multi-meal ordering, multi-day ordering,
 ## Server actions — `lib/actions/meals.ts`
 
 - `getMeals(tripId)`: slots + cooks + cook display names (RLS-gated, member-only).
-- `addMealSlot({ trip_id, day_date, meal_type, title? })`: member.
-- `updateMealSlot({ slot_id, title?, menu?, notes? })`: member (shared fields).
+- `addMealSlot({ trip_id, day_date, meal_type, title? })`: member. **Fetches the
+  trip's `starts_on`/`ends_on` and rejects if either is null ("Set trip dates
+  first") or if `day_date` is outside `[starts_on, ends_on]`.**
+- `updateMealSlot({ slot_id, title?, menu?, notes? })`: write-gated by RLS to host
+  or a signed-up cook (shared fields).
 - `deleteMealSlot(slotId)`: creator or host (RLS).
 - `joinCook(slotId)`: insert the caller's `meal_cooks` row (reads `trip_id` from
   the slot first, like `claimItem`).
@@ -113,16 +123,21 @@ Covered by Vitest: empty, single day multi-meal ordering, multi-day ordering,
 
 ## UI — `/trips/[id]/meals`
 
-- Server route: `requireTripMembership`, initial `getMeals`, render client
-  `MealsList`.
+- Server route: `requireTripMembership`, fetch the trip's `starts_on`/`ends_on`,
+  initial `getMeals`, render client `MealsList` (passing the date bounds + current
+  user id + isHost).
 - `MealsList` (client): TanStack Query (`["meals", tripId]`, `initialData` +
   `initialDataUpdatedAt: 0`), `useTripChannel(tripId, MEAL_TABLES, invalidate)`,
   optimistic-free mutations with `onSettled` invalidate (consistent with packing).
-  Add-slot form: date input (defaults to trip `starts_on` if set) + meal-type
-  select + optional title. Renders `groupMealSlots` output as day sections.
+  If trip dates are TBD (either bound null): show a "Set your trip dates to plan
+  meals" state with a link to the trip edit page, and no add-slot form. Otherwise
+  the add-slot form: date input with `min=starts_on` / `max=ends_on` (defaults to
+  `starts_on`) + meal-type select + optional title. Renders `groupMealSlots`
+  output as day sections.
 - `MealSlotCard` (client): meal type + title header; the cooks signed up; an
-  "I'll cook" / "Leave" toggle for the current user; shared menu/notes with an
-  inline edit form (any member); creator-or-host delete.
+  "I'll cook" / "Leave" toggle for the current user; shared menu/notes shown to
+  all, with an inline edit form revealed only when the current user is the host or
+  a signed-up cook; creator-or-host delete.
 - Empty state: `topo-bg` + sage icon nudging a member to add the first meal.
 - Brand: `bg-card`, forest accents, Lucide icons, mobile-first 375px.
 - Flip the FeatureTiles "Meals" tile from `soon` → link to `/trips/[id]/meals`.
