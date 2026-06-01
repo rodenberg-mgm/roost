@@ -56,6 +56,12 @@ story and closes the missing v1.0 **Property edit** CRUD item.
   only when `owner_user_id === membership.userId` (a non-owner co-host would be
   bounced by the edit page's RLS anyway).
 
+### 4b. My Properties list → edit (entry point)
+The `/properties` list cards previously linked nowhere, which would leave the
+new edit route reachable only via the trip chip (an orphan route when no trip is
+linked). Make each card link to `/properties/[id]/edit`. Added during
+implementation to complete the route, not a separate feature.
+
 ### 5. `components/property-link-chip.tsx` (presentational)
 - Small Bone/Sand chip: home icon + "Linked to [name]", optional
   "Edit property →" link to `/properties/[id]/edit`. Brand-aligned (forest text,

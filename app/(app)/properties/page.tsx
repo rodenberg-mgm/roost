@@ -1,6 +1,6 @@
 import { EmptyState } from "@/components/empty-state";
 import { getMyProperties } from "@/lib/actions/properties";
-import { ArrowLeft, Home, Plus } from "lucide-react";
+import { ArrowLeft, Home, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 
 export default async function PropertiesPage() {
@@ -39,12 +39,13 @@ export default async function PropertiesPage() {
       ) : (
         <div className="space-y-3">
           {properties.map((p) => (
-            <div
+            <Link
               key={p.id}
-              className="flex items-center gap-3 rounded-card border bg-card p-4 shadow-card"
+              href={`/properties/${p.id}/edit`}
+              className="flex items-center gap-3 rounded-card border bg-card p-4 shadow-card transition-colors hover:border-forest/30 hover:bg-sand/30"
             >
               <Home className="h-5 w-5 text-roost" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-ink">{p.name}</h3>
                 {(p.city || p.region) && (
                   <p className="text-sm text-ink-light">
@@ -52,7 +53,8 @@ export default async function PropertiesPage() {
                   </p>
                 )}
               </div>
-            </div>
+              <Pencil className="h-4 w-4 shrink-0 text-ink-light" />
+            </Link>
           ))}
         </div>
       )}

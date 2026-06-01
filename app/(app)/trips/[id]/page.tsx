@@ -2,6 +2,7 @@ import { TripInfoSection } from "@/components/trip-info-section";
 import { SensitiveInfoSection } from "@/components/sensitive-info-section";
 import { StampBadge } from "@/components/stamp-badge";
 import { FeatureTiles } from "@/components/feature-tiles";
+import { PropertyLinkChip } from "@/components/property-link-chip";
 import { CabinScene } from "@/components/illustrations";
 import { Button } from "@/components/ui/button";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
@@ -114,6 +115,26 @@ export default async function TripPage({ params }: TripPageProps) {
 
   const canEdit = isHostRole(membership.role);
 
+  // Linked-property chip (host/co-host only). Read name via service-role since
+  // `properties` is owner-only under RLS — a co-host who isn't the owner still
+  // needs the name. The "Edit property" link shows only to the actual owner.
+  let linkedProperty: { id: string; name: string; canEdit: boolean } | null = null;
+  if (canEdit && trip.property_id) {
+    const { data: prop } = await serviceClient
+      .from("properties")
+      .select("id, name, owner_user_id")
+      .eq("id", trip.property_id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (prop) {
+      linkedProperty = {
+        id: prop.id,
+        name: prop.name,
+        canEdit: prop.owner_user_id === membership.userId,
+      };
+    }
+  }
+
   const formatDate = (date: string | null) => {
     if (!date) return null;
     return new Date(date + "T00:00:00").toLocaleDateString("en-US", {
@@ -171,6 +192,17 @@ export default async function TripPage({ params }: TripPageProps) {
           )}
         </div>
       </header>
+
+      {/* Linked property */}
+      {linkedProperty && (
+        <div className="mb-5">
+          <PropertyLinkChip
+            propertyId={linkedProperty.id}
+            propertyName={linkedProperty.name}
+            canEdit={linkedProperty.canEdit}
+          />
+        </div>
+      )}
 
       {/* Welcome banner */}
       <div className="relative mb-5 overflow-hidden rounded-card border bg-card shadow-card">

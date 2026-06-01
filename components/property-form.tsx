@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createProperty } from "@/lib/actions/properties";
+import { createProperty, updateProperty } from "@/lib/actions/properties";
 import type { CreatePropertyInput } from "@/lib/schemas/property";
 import { Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -13,9 +13,20 @@ interface PropertyFormProps {
   onCancel?: () => void;
   /** When true, renders as a div instead of form to avoid nested-form hydration errors */
   inline?: boolean;
+  /** When set, the form edits this property instead of creating a new one. */
+  propertyId?: string;
+  /** Initial field values for edit mode (uncontrolled defaults). */
+  initialValues?: Partial<CreatePropertyInput>;
 }
 
-export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps) {
+export function PropertyForm({
+  onSuccess,
+  onCancel,
+  inline,
+  propertyId,
+  initialValues,
+}: PropertyFormProps) {
+  const isEdit = !!propertyId;
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,7 +57,9 @@ export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps)
       parking_notes: getInputValue("parking_notes") || undefined,
     };
 
-    const result = await createProperty(input);
+    const result = isEdit
+      ? await updateProperty(propertyId, input)
+      : await createProperty(input);
 
     setLoading(false);
 
@@ -68,18 +81,18 @@ export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps)
 
         <div className="space-y-2">
           <Label htmlFor="prop-name">Property name</Label>
-          <Input id="prop-name" name="name" placeholder="Vineyard House" required />
+          <Input id="prop-name" name="name" placeholder="Vineyard House" required defaultValue={initialValues?.name} />
           {errors.name && <p className="text-sm text-red-600">{errors.name[0]}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="prop-city">City</Label>
-            <Input id="prop-city" name="city" placeholder="Sonoma" />
+            <Input id="prop-city" name="city" placeholder="Sonoma" defaultValue={initialValues?.city} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="prop-region">State / Region</Label>
-            <Input id="prop-region" name="region" placeholder="California" />
+            <Input id="prop-region" name="region" placeholder="California" defaultValue={initialValues?.region} />
           </div>
         </div>
 
@@ -90,6 +103,7 @@ export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps)
             name="house_rules"
             rows={3}
             placeholder="No shoes inside, quiet hours after 10pm..."
+            defaultValue={initialValues?.house_rules}
             className="w-full rounded-input border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
@@ -101,6 +115,7 @@ export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps)
             name="local_tips"
             rows={3}
             placeholder="Best coffee: Blue Barn on the square..."
+            defaultValue={initialValues?.local_tips}
             className="w-full rounded-input border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
@@ -116,33 +131,33 @@ export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps)
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="prop-wifi-ssid">Wifi name</Label>
-            <Input id="prop-wifi-ssid" name="wifi_ssid" placeholder="VineyardGuest" />
+            <Input id="prop-wifi-ssid" name="wifi_ssid" placeholder="VineyardGuest" defaultValue={initialValues?.wifi_ssid} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="prop-wifi-pass">Wifi password</Label>
-            <Input id="prop-wifi-pass" name="wifi_password" placeholder="••••••" />
+            <Input id="prop-wifi-pass" name="wifi_password" placeholder="••••••" defaultValue={initialValues?.wifi_password} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="prop-door">Door code</Label>
-            <Input id="prop-door" name="door_code" placeholder="1234#" />
+            <Input id="prop-door" name="door_code" placeholder="1234#" defaultValue={initialValues?.door_code} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="prop-gate">Gate code</Label>
-            <Input id="prop-gate" name="gate_code" />
+            <Input id="prop-gate" name="gate_code" defaultValue={initialValues?.gate_code} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="prop-address">Address</Label>
-            <Input id="prop-address" name="address_line" placeholder="123 Vineyard Ln" />
+            <Input id="prop-address" name="address_line" placeholder="123 Vineyard Ln" defaultValue={initialValues?.address_line} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="prop-postal">Postal code</Label>
-            <Input id="prop-postal" name="postal_code" placeholder="95476" />
+            <Input id="prop-postal" name="postal_code" placeholder="95476" defaultValue={initialValues?.postal_code} />
           </div>
         </div>
 
@@ -153,6 +168,7 @@ export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps)
             name="parking_notes"
             rows={2}
             placeholder="Park in the gravel lot, not on the grass..."
+            defaultValue={initialValues?.parking_notes}
             className="w-full rounded-input border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
@@ -177,6 +193,8 @@ export function PropertyForm({ onSuccess, onCancel, inline }: PropertyFormProps)
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Saving...
             </>
+          ) : isEdit ? (
+            "Save changes"
           ) : (
             "Save property"
           )}
