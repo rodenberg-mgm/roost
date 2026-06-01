@@ -95,12 +95,15 @@ export async function claimItem(input: { item_id: string; quantity: number }) {
     .single();
   if (!item) return { error: "Item not found" };
 
+  // Reset brought: changing your committed quantity means you're re-committing,
+  // not confirming you already packed the new amount.
   const { error } = await supabase.from("packing_claims").upsert(
     {
       item_id: parsed.data.item_id,
       trip_id: item.trip_id,
       user_id: user.id,
       quantity: parsed.data.quantity,
+      brought: false,
     },
     { onConflict: "item_id,user_id" }
   );
@@ -128,11 +131,18 @@ export async function unclaimItem(itemId: string) {
 
 export async function setBrought(input: { claim_id: string; brought: boolean }) {
   const supabase = await createClient();
-  // RLS (packing_claims_own_update) restricts to the claim owner.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  // RLS (packing_claims_own_update) also enforces ownership; the explicit
+  // user_id filter makes a non-owner attempt a clear 0-row no-op.
   const { error } = await supabase
     .from("packing_claims")
     .update({ brought: input.brought })
-    .eq("id", input.claim_id);
+    .eq("id", input.claim_id)
+    .eq("user_id", user.id);
 
   if (error) return { error: error.message };
   return { data: { ok: true } };

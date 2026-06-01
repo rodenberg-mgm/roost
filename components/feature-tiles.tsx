@@ -27,7 +27,7 @@ export function FeatureTiles({ tripId }: { tripId: string }) {
   const tiles: Tile[] = [
     { label: "Trip Info", icon: ScrollText, href: `/trips/${tripId}#trip-info` },
     { label: "Guests", icon: Users, href: `/trips/${tripId}#guests` },
-    { label: "Packing", icon: Package, soon: true },
+    { label: "Packing", icon: Package, href: `/trips/${tripId}/packing` },
     { label: "Meals", icon: UtensilsCrossed, soon: true },
     { label: "Photos", icon: ImageIcon, soon: true },
     { label: "Guestbook", icon: BookOpen, soon: true },

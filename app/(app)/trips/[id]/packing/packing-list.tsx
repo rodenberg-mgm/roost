@@ -38,6 +38,9 @@ export function PackingList({
     queryKey,
     queryFn: () => getPacking(tripId),
     initialData: initialItems,
+    // Treat server-hydrated data as immediately stale so realtime invalidations
+    // refetch on remount instead of serving 30s-old data.
+    initialDataUpdatedAt: 0,
   });
 
   // Stable callback so the realtime channel doesn't resubscribe each render.
@@ -72,19 +75,32 @@ export function PackingList({
   const [qty, setQty] = useState("");
   const [adding, setAdding] = useState(false);
 
+  const [addError, setAddError] = useState<string | null>(null);
   const add = useMutation({
-    mutationFn: () =>
-      addPackingItem({
+    mutationFn: async () => {
+      const n = parseInt(qty, 10);
+      const res = await addPackingItem({
         trip_id: tripId,
         title: title.trim(),
-        target_quantity: qty.trim() ? Number(qty) : null,
-      }),
-    onSettled: () => {
+        target_quantity: n > 0 ? n : null,
+      });
+      if ("error" in res && res.error) {
+        const err = res.error as unknown;
+        const msg =
+          typeof err === "string"
+            ? err
+            : (err as { _form?: string[] })._form?.[0] ?? "Couldn't add item";
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => {
       setTitle("");
       setQty("");
       setAdding(false);
-      refetch();
+      setAddError(null);
     },
+    onError: (e: Error) => setAddError(e.message),
+    onSettled: refetch,
   });
 
   return (
@@ -115,11 +131,13 @@ export function PackingList({
                 id="pack-qty"
                 type="number"
                 min={1}
+                step={1}
                 value={qty}
                 onChange={(e) => setQty(e.target.value)}
                 placeholder="Leave blank for a single grab-it item"
               />
             </div>
+            {addError && <p className="text-sm text-brick">{addError}</p>}
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setAdding(false)}>
                 Cancel
