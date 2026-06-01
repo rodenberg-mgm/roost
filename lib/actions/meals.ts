@@ -101,12 +101,14 @@ export async function updateMealSlot(input: {
 
   const supabase = await createClient();
   // RLS (meal_slots_cook_update) restricts writes to the host or a signed-up cook.
-  const { error } = await supabase
+  // A blocked write affects 0 rows with no error, so check the count and report it.
+  const { error, count } = await supabase
     .from("meal_slots")
-    .update(patch)
+    .update(patch, { count: "exact" })
     .eq("id", parsed.data.slot_id);
 
   if (error) return { error: error.message };
+  if (!count) return { error: "Only the host or a cook on this meal can edit it" };
   return { data: { ok: true } };
 }
 

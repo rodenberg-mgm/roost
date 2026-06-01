@@ -60,6 +60,14 @@ create policy "meal_slots_cook_update"
       where mc.slot_id = meal_slots.id
         and mc.user_id = auth.uid()
     )
+  )
+  with check (
+    public.is_trip_host(trip_id)
+    or exists (
+      select 1 from public.meal_cooks mc
+      where mc.slot_id = meal_slots.id
+        and mc.user_id = auth.uid()
+    )
   );
 
 create policy "meal_slots_delete"

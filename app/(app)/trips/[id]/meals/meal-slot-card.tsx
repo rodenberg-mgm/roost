@@ -23,7 +23,7 @@ interface MealSlotCardProps {
   onSaveDetails: (
     slotId: string,
     fields: { title: string; menu: string; notes: string }
-  ) => void;
+  ) => Promise<{ error?: string } | void>;
   onDelete: (slotId: string) => void;
 }
 
@@ -44,11 +44,26 @@ export function MealSlotCard({
   const [title, setTitle] = useState(slot.title ?? "");
   const [menu, setMenu] = useState(slot.menu ?? "");
   const [notes, setNotes] = useState(slot.notes ?? "");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   function cancelEdit() {
     setTitle(slot.title ?? "");
     setMenu(slot.menu ?? "");
     setNotes(slot.notes ?? "");
+    setSaveError(null);
+    setEditing(false);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    const res = await onSaveDetails(slot.id, { title, menu, notes });
+    setSaving(false);
+    if (res && "error" in res && res.error) {
+      setSaveError(res.error);
+      return;
+    }
+    setSaveError(null);
     setEditing(false);
   }
 
@@ -145,6 +160,7 @@ export function MealSlotCard({
               className="w-full rounded-input border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
+          {saveError && <p className="text-sm text-brick">{saveError}</p>}
           <div className="flex gap-2">
             <Button type="button" variant="outline" className="flex-1" onClick={cancelEdit}>
               Cancel
@@ -152,10 +168,8 @@ export function MealSlotCard({
             <Button
               type="button"
               className="flex-1 bg-forest text-white hover:bg-forest-dark"
-              onClick={() => {
-                onSaveDetails(slot.id, { title, menu, notes });
-                setEditing(false);
-              }}
+              onClick={handleSave}
+              disabled={saving}
             >
               Save
             </Button>

@@ -245,7 +245,10 @@ export function MealsList({
                     isHost={isHost}
                     onJoin={(slotId) => join.mutate(slotId)}
                     onLeave={(slotId) => leave.mutate(slotId)}
-                    onSaveDetails={(slotId, fields) => save.mutate({ slotId, fields })}
+                    onSaveDetails={async (slotId, fields) => {
+                      const res = await save.mutateAsync({ slotId, fields });
+                      return "error" in res && res.error ? { error: res.error } : {};
+                    }}
                     onDelete={(slotId) => remove.mutate(slotId)}
                   />
                 ))}
