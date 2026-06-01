@@ -1,5 +1,6 @@
 "use client";
 
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,13 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
     initialData.stocked_items.join(", ")
   );
 
+  // Location fields are controlled so address autocomplete can prefill them.
+  const [city, setCity] = useState(initialData.city || "");
+  const [region, setRegion] = useState(initialData.region || "");
+  const [addressLine, setAddressLine] = useState(sensitiveData?.address_line || "");
+  const [postalCode, setPostalCode] = useState(sensitiveData?.postal_code || "");
+  const [prefilledFromAddress, setPrefilledFromAddress] = useState(false);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -50,8 +58,8 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
       name: fd.get("name") as string,
       starts_on: (fd.get("starts_on") as string) || null,
       ends_on: (fd.get("ends_on") as string) || null,
-      city: (fd.get("city") as string) || undefined,
-      region: (fd.get("region") as string) || undefined,
+      city: city || undefined,
+      region: region || undefined,
       house_rules: (fd.get("house_rules") as string) || undefined,
       local_tips: (fd.get("local_tips") as string) || undefined,
       stocked_items: stockedInput
@@ -62,20 +70,17 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
       wifi_password: (fd.get("wifi_password") as string) || undefined,
       door_code: (fd.get("door_code") as string) || undefined,
       gate_code: (fd.get("gate_code") as string) || undefined,
-      address_line: (fd.get("address_line") as string) || undefined,
-      postal_code: (fd.get("postal_code") as string) || undefined,
+      address_line: addressLine || undefined,
+      postal_code: postalCode || undefined,
       parking_notes: (fd.get("parking_notes") as string) || undefined,
     });
 
-    setLoading(false);
-
-    if (result.error) {
+    // On success, updateTrip redirects server-side to /dashboard?saved=1.
+    // It only returns here when there's an error to show.
+    if (result?.error) {
+      setLoading(false);
       setError(result.error);
-      return;
     }
-
-    router.push(`/trips/${tripId}`);
-    router.refresh();
   }
 
   // Use native textarea styling
@@ -100,16 +105,66 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
           </div>
         </div>
 
+        {/* Location — address leads and auto-fills the public city/state/zip below */}
+        <div className="space-y-2">
+          <Label htmlFor="address_line">Address</Label>
+          <AddressAutocomplete
+            id="address_line"
+            value={addressLine}
+            onChange={setAddressLine}
+            onSelect={({ city: c, region: r, postalCode: pc }) => {
+              if (c) setCity(c);
+              if (r) setRegion(r);
+              if (pc) setPostalCode(pc);
+              if (c || r) setPrefilledFromAddress(true);
+            }}
+          />
+          <p className="text-xs text-ink-light">
+            Start here — we&apos;ll fill in the city, state &amp; zip. Kept private; guests must
+            join &amp; verify to see the full address.
+          </p>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="city">City</Label>
-            <Input id="city" name="city" defaultValue={initialData.city || ""} />
+            <Input
+              id="city"
+              name="city"
+              value={city}
+              onChange={(e) => {
+                setCity(e.target.value);
+                setPrefilledFromAddress(false);
+              }}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="region">State / Region</Label>
-            <Input id="region" name="region" defaultValue={initialData.region || ""} />
+            <Input
+              id="region"
+              name="region"
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+            />
           </div>
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="postal_code">Postal code</Label>
+            <Input
+              id="postal_code"
+              name="postal_code"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+            />
+          </div>
+        </div>
+        {prefilledFromAddress && (
+          <p className="-mt-2 text-xs text-ink-light">
+            City &amp; state filled from the address — edit if needed. Shown publicly instead of your address.
+          </p>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="house_rules">House rules</Label>
@@ -149,17 +204,6 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
           <div className="space-y-2">
             <Label htmlFor="gate_code">Gate code</Label>
             <Input id="gate_code" name="gate_code" defaultValue={sensitiveData?.gate_code || ""} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="address_line">Address</Label>
-            <Input id="address_line" name="address_line" defaultValue={sensitiveData?.address_line || ""} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="postal_code">Postal code</Label>
-            <Input id="postal_code" name="postal_code" defaultValue={sensitiveData?.postal_code || ""} />
           </div>
         </div>
 

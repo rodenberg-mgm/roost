@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createTripSchema, type CreateTripInput } from "@/lib/schemas/trip";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createTrip(input: CreateTripInput) {
@@ -127,7 +128,11 @@ export async function updateTrip(tripId: string, input: {
     if (error) return { error: error.message };
   }
 
-  return { success: true };
+  // Reflect the edit immediately on the dashboard, then redirect there with
+  // a success flag. redirect() throws NEXT_REDIRECT, so keep it after all
+  // fallible work and outside any try/catch.
+  revalidatePath("/dashboard");
+  redirect("/dashboard?saved=1");
 }
 
 async function syncPropertyToTrip(

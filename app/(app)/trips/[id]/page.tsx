@@ -1,6 +1,9 @@
 import { TripInfoSection } from "@/components/trip-info-section";
 import { SensitiveInfoSection } from "@/components/sensitive-info-section";
 import { StampBadge } from "@/components/stamp-badge";
+import { FeatureTiles } from "@/components/feature-tiles";
+import { CabinScene } from "@/components/illustrations";
+import { Button } from "@/components/ui/button";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -11,12 +14,38 @@ import {
   ScrollText,
   Lightbulb,
   Package,
-  Settings,
-  Send,
   Pencil,
+  Send,
+  Share2,
+  Plus,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+/** Host-only "Add" prompt shown in an otherwise-empty info section. */
+function AddPrompt({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-1.5 text-sm text-forest transition-colors hover:text-forest-dark"
+    >
+      <Plus className="h-4 w-4" />
+      {label}
+    </Link>
+  );
+}
+
+/** Small "Edit" action shown top-right of a populated section. */
+function EditLink({ href }: { href: string }) {
+  return (
+    <Link
+      href={href}
+      className="font-mono text-[0.65rem] uppercase tracking-wider text-forest transition-colors hover:text-forest-dark"
+    >
+      Edit
+    </Link>
+  );
+}
 
 interface TripPageProps {
   params: Promise<{ id: string }>;
@@ -89,52 +118,63 @@ export default async function TripPage({ params }: TripPageProps) {
 
   return (
     <div>
+      {/* Header */}
       <header className="mb-6">
         <Link
           href="/dashboard"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-ink-light hover:text-ink"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-light transition-colors hover:text-forest"
         >
           <ArrowLeft className="h-4 w-4" />
           My Trips
         </Link>
-        <StampBadge variant="forest">Trip Guide</StampBadge>
+
+        <div className="mb-2">
+          <StampBadge variant="forest">Trip Guide</StampBadge>
+        </div>
+
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="font-display text-2xl font-bold text-ink">{trip.name}</h1>
-            {(trip.city || trip.region) && (
-              <p className="mt-1 text-sm text-ink-light">
-                {[trip.city, trip.region].filter(Boolean).join(", ")}
-              </p>
-            )}
+            <h1 className="font-display text-2xl font-bold uppercase text-ink">{trip.name}</h1>
+            <p className="mt-1 text-sm text-ink-light">{dateDisplay}</p>
           </div>
           {canEdit && (
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               <Link
                 href={`/trips/${id}/edit`}
-                className="flex h-9 w-9 items-center justify-center rounded-button text-ink-light hover:bg-sand/50 hover:text-ink"
+                className="flex h-9 w-9 items-center justify-center rounded-button text-ink-light transition-colors hover:bg-sand/50 hover:text-forest"
               >
                 <Pencil className="h-4 w-4" />
               </Link>
               <Link
                 href={`/trips/${id}/invite`}
-                className="flex h-9 w-9 items-center justify-center rounded-button text-ink-light hover:bg-sand/50 hover:text-ink"
+                className="flex h-9 w-9 items-center justify-center rounded-button text-ink-light transition-colors hover:bg-sand/50 hover:text-forest"
               >
                 <Send className="h-4 w-4" />
-              </Link>
-              <Link
-                href={`/trips/${id}/settings`}
-                className="flex h-9 w-9 items-center justify-center rounded-button text-ink-light hover:bg-sand/50 hover:text-ink"
-              >
-                <Settings className="h-4 w-4" />
               </Link>
             </div>
           )}
         </div>
       </header>
 
-      <div className="space-y-4">
+      {/* Welcome banner */}
+      <div className="relative mb-5 overflow-hidden rounded-card border bg-card shadow-card">
+        <CabinScene className="mx-auto h-44 w-full" />
+        <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 pb-3">
+          <StampBadge variant="forest">Welcome</StampBadge>
+          <StampBadge variant="kraft">Relax</StampBadge>
+          <StampBadge variant="brick">Enjoy</StampBadge>
+        </div>
+      </div>
+
+      {/* Quick-access tiles */}
+      <div className="mb-5">
+        <FeatureTiles tripId={id} />
+      </div>
+
+      {/* Content sections */}
+      <div className="space-y-3">
         {/* Dates */}
-        <TripInfoSection icon={Calendar} title="Dates">
+        <TripInfoSection id="trip-info" icon={Calendar} title="Dates">
           <p className="text-sm text-ink">{dateDisplay}</p>
         </TripInfoSection>
 
@@ -149,29 +189,34 @@ export default async function TripPage({ params }: TripPageProps) {
 
         {/* Guests */}
         <TripInfoSection
+          id="guests"
           icon={Users}
           title={`Guests (${members?.length || 0})`}
           action={
             canEdit ? (
               <Link
                 href={`/trips/${id}/invite`}
-                className="text-xs text-forest hover:text-forest-dark"
+                className="font-mono text-[0.65rem] uppercase tracking-wider text-forest transition-colors hover:text-forest-dark"
               >
                 Invite
               </Link>
             ) : undefined
           }
         >
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {members?.map((m) => {
               const userRaw = m.users as unknown;
               const user = (Array.isArray(userRaw) ? userRaw[0] : userRaw) as { display_name: string; email: string } | null;
               const name = user?.display_name || m.invited_email || "Unknown";
               const isJoined = !!m.joined_at;
+              const initial = name.charAt(0).toUpperCase();
               return (
-                <li key={m.id} className="flex items-center justify-between text-sm">
-                  <span className="text-ink">{name}</span>
-                  <span className="text-xs text-ink-light">
+                <li key={m.id} className="flex items-center gap-3 text-sm">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sand font-display text-xs font-bold uppercase text-ink-light">
+                    {initial}
+                  </div>
+                  <span className="flex-1 text-ink">{name}</span>
+                  <span className="rounded-badge bg-sand/50 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider text-ink-light">
                     {m.role === "host"
                       ? "Host"
                       : m.role === "co-host"
@@ -186,30 +231,59 @@ export default async function TripPage({ params }: TripPageProps) {
           </ul>
         </TripInfoSection>
 
-        {/* House Rules */}
-        {trip.house_rules && (
-          <TripInfoSection icon={ScrollText} title="House Rules">
-            <p className="whitespace-pre-wrap text-sm text-ink">{trip.house_rules}</p>
+        {/* House Rules — shown to all when present; empty "Add" prompt for hosts */}
+        {(trip.house_rules || canEdit) && (
+          <TripInfoSection
+            icon={ScrollText}
+            title="House Rules"
+            action={trip.house_rules && canEdit ? <EditLink href={`/trips/${id}/edit`} /> : undefined}
+          >
+            {trip.house_rules ? (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{trip.house_rules}</p>
+            ) : (
+              <AddPrompt href={`/trips/${id}/edit`} label="Add house rules" />
+            )}
           </TripInfoSection>
         )}
 
         {/* Local Tips */}
-        {trip.local_tips && (
-          <TripInfoSection icon={Lightbulb} title="Local Tips">
-            <p className="whitespace-pre-wrap text-sm text-ink">{trip.local_tips}</p>
+        {(trip.local_tips || canEdit) && (
+          <TripInfoSection
+            icon={Lightbulb}
+            title="Local Tips"
+            action={trip.local_tips && canEdit ? <EditLink href={`/trips/${id}/edit`} /> : undefined}
+          >
+            {trip.local_tips ? (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{trip.local_tips}</p>
+            ) : (
+              <AddPrompt href={`/trips/${id}/edit`} label="Add local tips" />
+            )}
           </TripInfoSection>
         )}
 
         {/* Stocked Items */}
-        {trip.stocked_items && (trip.stocked_items as string[]).length > 0 && (
-          <TripInfoSection icon={Package} title="Stocked Items">
-            <ul className="grid grid-cols-2 gap-1">
-              {(trip.stocked_items as string[]).map((item: string, i: number) => (
-                <li key={i} className="text-sm text-ink">
-                  • {item}
-                </li>
-              ))}
-            </ul>
+        {((trip.stocked_items as string[])?.length > 0 || canEdit) && (
+          <TripInfoSection
+            icon={Package}
+            title="Stocked Items"
+            action={
+              (trip.stocked_items as string[])?.length > 0 && canEdit ? (
+                <EditLink href={`/trips/${id}/edit`} />
+              ) : undefined
+            }
+          >
+            {(trip.stocked_items as string[])?.length > 0 ? (
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                {(trip.stocked_items as string[]).map((item: string, i: number) => (
+                  <li key={i} className="flex items-center gap-1.5 text-sm text-ink">
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-forest/40" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <AddPrompt href={`/trips/${id}/edit`} label="Add stocked items" />
+            )}
           </TripInfoSection>
         )}
 
@@ -222,6 +296,16 @@ export default async function TripPage({ params }: TripPageProps) {
           initialData={sensitiveInfo}
           hasAccess={hasSensitiveAccess}
         />
+
+        {/* Share button */}
+        {canEdit && (
+          <Button asChild size="lg" className="w-full text-base">
+            <Link href={`/trips/${id}/invite`}>
+              <Share2 className="h-4 w-4" />
+              Share with Guests
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );

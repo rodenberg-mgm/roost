@@ -1,5 +1,27 @@
 import type { Metadata, Viewport } from "next";
+import { Oswald, Lora, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+
+const displayFont = Oswald({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-oswald",
+  display: "swap",
+});
+
+const bodyFont = Lora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-lora",
+  display: "swap",
+});
+
+const monoFont = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-ibm-plex-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Roost — Your Shared Stay, All in One Place",
@@ -21,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-page text-ink antialiased">
         {children}
         <script

@@ -3,7 +3,8 @@
 import { SensitiveField } from "@/components/sensitive-field";
 import { RevealDialog } from "@/components/reveal-dialog";
 import { TripInfoSection } from "@/components/trip-info-section";
-import { Lock } from "lucide-react";
+import { Lock, Plus } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 interface SensitiveData {
@@ -40,9 +41,23 @@ export function SensitiveInfoSection({
   const canSee = isHost || revealed;
 
   const data = initialData;
-  const hasAnyData = data && Object.values(data).some((v) => v !== null);
+  const hasAnyData = data && Object.values(data).some((v) => v !== null && v !== "");
 
-  if (!hasAnyData) return null;
+  // Empty: hosts get a discoverable "Add" prompt; guests see nothing.
+  if (!hasAnyData) {
+    if (!isHost) return null;
+    return (
+      <TripInfoSection icon={Lock} title="Wifi, Codes & Address">
+        <Link
+          href={`/trips/${tripId}/edit`}
+          className="inline-flex items-center gap-1.5 text-sm text-forest transition-colors hover:text-forest-dark"
+        >
+          <Plus className="h-4 w-4" />
+          Add wifi, codes &amp; address
+        </Link>
+      </TripInfoSection>
+    );
+  }
 
   function handleRevealRequest() {
     if (isHost) {
@@ -54,7 +69,20 @@ export function SensitiveInfoSection({
 
   return (
     <>
-      <TripInfoSection icon={Lock} title="Wifi, Codes & Address">
+      <TripInfoSection
+        icon={Lock}
+        title="Wifi, Codes & Address"
+        action={
+          isHost ? (
+            <Link
+              href={`/trips/${tripId}/edit`}
+              className="font-mono text-[0.65rem] uppercase tracking-wider text-forest transition-colors hover:text-forest-dark"
+            >
+              Edit
+            </Link>
+          ) : undefined
+        }
+      >
         {data && (
           <div className="divide-y divide-sand/30">
             <SensitiveField label="Wifi" value={data.wifi_ssid} revealed={canSee} onRevealRequest={handleRevealRequest} />

@@ -16,14 +16,12 @@ export default async function NewTripPage() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Link>
-        <h1 className="font-display text-2xl font-bold text-ink">Start a Trip</h1>
+        <h1 className="font-display text-2xl font-bold uppercase text-ink">Start a Trip</h1>
         <p className="mt-1 text-sm text-ink-light">
-          Name it, pick dates (or leave TBD), and invite your crew.
+          First — where&apos;s the group staying?
         </p>
       </header>
-      <div className="rounded-card border bg-card p-6 shadow-card">
-        <TripForm properties={properties} />
-      </div>
+      <TripForm properties={properties} />
     </div>
   );
 }
