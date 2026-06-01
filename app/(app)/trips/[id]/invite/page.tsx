@@ -1,4 +1,5 @@
 import { InviteForm } from "@/components/invite-form";
+import { InviteList } from "@/components/invite-list";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
@@ -27,7 +28,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   // Fetch existing invites
   const { data: invites } = await supabase
     .from("trip_invites")
-    .select("email, consumed_at, created_at")
+    .select("id, email, consumed_at, created_at")
     .eq("trip_id", id)
     .order("created_at", { ascending: false });
 
@@ -55,16 +56,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
         {invites && invites.length > 0 && (
           <div className="rounded-card border bg-card p-5 shadow-card">
             <h2 className="mb-3 font-semibold text-ink">Sent invites</h2>
-            <ul className="space-y-2">
-              {invites.map((inv, i) => (
-                <li key={i} className="flex items-center justify-between text-sm">
-                  <span className="text-ink">{inv.email}</span>
-                  <span className="text-xs text-ink-light">
-                    {inv.consumed_at ? "Joined" : "Pending"}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <InviteList invites={invites} />
           </div>
         )}
       </div>

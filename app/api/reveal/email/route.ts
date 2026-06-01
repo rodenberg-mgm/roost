@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -39,18 +39,33 @@ export async function POST(request: Request) {
     }
   }
 
-  // Upsert sensitive grant
-  const { error: grantError } = await supabase
-    .from("trip_grants")
-    .insert({
-      trip_id: tripId,
-      user_id: user.id,
-      level: "sensitive",
-      source: "email-verify",
-    });
+  // Issue the sensitive grant via service-role: trip_grants has no INSERT
+  // RLS policy by design — this verified handler is the only path to a grant.
+  const serviceClient = await createServiceClient();
 
-  if (grantError && !grantError.message.includes("duplicate")) {
-    return NextResponse.json({ error: grantError.message }, { status: 500 });
+  // Skip if a live sensitive grant already exists (avoids duplicate rows).
+  const { data: existingGrant } = await serviceClient
+    .from("trip_grants")
+    .select("id")
+    .eq("trip_id", tripId)
+    .eq("user_id", user.id)
+    .eq("level", "sensitive")
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (!existingGrant) {
+    const { error: grantError } = await serviceClient
+      .from("trip_grants")
+      .insert({
+        trip_id: tripId,
+        user_id: user.id,
+        level: "sensitive",
+        source: "email-verify",
+      });
+
+    if (grantError) {
+      return NextResponse.json({ error: grantError.message }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ success: true });

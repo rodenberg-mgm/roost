@@ -1,9 +1,68 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { sendInvitesSchema, type SendInvitesInput } from "@/lib/schemas/invite";
 import { resend } from "@/lib/email/resend";
 import { TripInviteEmail } from "@/lib/email/templates/trip-invite";
+import { revalidatePath } from "next/cache";
+
+function formatTripDates(startsOn: string | null, endsOn: string | null) {
+  const fmt = (d: string | null) =>
+    d
+      ? new Date(d + "T00:00:00").toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })
+      : null;
+  const start = fmt(startsOn);
+  const end = fmt(endsOn);
+  return start && end
+    ? `${start} – ${end}`
+    : start
+      ? `Starting ${start}`
+      : "Dates TBD";
+}
+
+/**
+ * Send a single invite email for an existing token.
+ * Returns { error } on failure. The Resend SDK reports API errors in the
+ * response (it does NOT throw), so we must inspect `error` — otherwise a
+ * rejected send looks like a success and no mail goes out.
+ */
+async function deliverInviteEmail(args: {
+  to: string;
+  token: string;
+  tripName: string;
+  hostName: string;
+  tripDates: string;
+}): Promise<{ error?: string }> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // Verified domain (roost.app) once set in env; falls back to Resend's shared
+  // test sender, which delivers only to the Resend account owner's address.
+  const fromAddress = process.env.EMAIL_FROM || "Roost <onboarding@resend.dev>";
+  const viewUrl = `${baseUrl}/trip/${args.token}`;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: fromAddress,
+      to: args.to,
+      subject: `${args.hostName} invited you to ${args.tripName}`,
+      react: TripInviteEmail({
+        tripName: args.tripName,
+        hostName: args.hostName,
+        tripDates: args.tripDates,
+        viewUrl,
+      }),
+    });
+
+    if (error) {
+      return { error: error.message || "Email send failed" };
+    }
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Email send failed" };
+  }
+}
 
 export async function sendInvites(input: SendInvitesInput) {
   const parsed = sendInvitesSchema.safeParse(input);
@@ -49,39 +108,32 @@ export async function sendInvites(input: SendInvitesInput) {
     .single();
 
   const hostName = hostUser?.display_name || user.email || "Your host";
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const tripDates = formatTripDates(trip.starts_on, trip.ends_on);
 
-  const formatDate = (d: string | null) =>
-    d
-      ? new Date(d + "T00:00:00").toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })
-      : null;
-
-  const start = formatDate(trip.starts_on);
-  const end = formatDate(trip.ends_on);
-  const tripDates =
-    start && end
-      ? `${start} – ${end}`
-      : start
-        ? `Starting ${start}`
-        : "Dates TBD";
+  // Service client for cleaning up orphan rows on send failure: trip_invites
+  // has no DELETE RLS policy (tokens are revoked only through verified actions).
+  const serviceClient = await createServiceClient();
 
   const results: { email: string; success: boolean; error?: string }[] = [];
 
-  for (const email of parsed.data.emails) {
+  for (const rawEmail of parsed.data.emails) {
+    const email = rawEmail.toLowerCase();
+
     // Check if already invited (not consumed)
     const { data: existing } = await supabase
       .from("trip_invites")
       .select("id")
       .eq("trip_id", parsed.data.trip_id)
-      .eq("email", email.toLowerCase())
+      .eq("email", email)
       .is("consumed_at", null)
-      .single();
+      .maybeSingle();
 
     if (existing) {
-      results.push({ email, success: false, error: "Already invited" });
+      results.push({
+        email,
+        success: false,
+        error: "Already invited — use Resend below",
+      });
       continue;
     }
 
@@ -90,8 +142,8 @@ export async function sendInvites(input: SendInvitesInput) {
       .from("trip_members")
       .select("id")
       .eq("trip_id", parsed.data.trip_id)
-      .eq("invited_email", email.toLowerCase())
-      .single();
+      .eq("invited_email", email)
+      .maybeSingle();
 
     if (existingMember) {
       results.push({ email, success: false, error: "Already a member" });
@@ -103,9 +155,9 @@ export async function sendInvites(input: SendInvitesInput) {
       .from("trip_invites")
       .insert({
         trip_id: parsed.data.trip_id,
-        email: email.toLowerCase(),
+        email,
       })
-      .select("token")
+      .select("id, token")
       .single();
 
     if (inviteError || !invite) {
@@ -117,31 +169,123 @@ export async function sendInvites(input: SendInvitesInput) {
       continue;
     }
 
-    // Send email via Resend
-    const viewUrl = `${baseUrl}/trip/${invite.token}`;
+    const { error: emailError } = await deliverInviteEmail({
+      to: email,
+      token: invite.token,
+      tripName: trip.name,
+      hostName,
+      tripDates,
+    });
 
-    try {
-      await resend.emails.send({
-        from: "Roost <noreply@roost.app>",
-        to: email,
-        subject: `${hostName} invited you to ${trip.name}`,
-        react: TripInviteEmail({
-          tripName: trip.name,
-          hostName,
-          tripDates,
-          viewUrl,
-        }),
-      });
-      results.push({ email, success: true });
-    } catch (emailError) {
-      results.push({
-        email,
-        success: false,
-        error:
-          emailError instanceof Error ? emailError.message : "Email send failed",
-      });
+    if (emailError) {
+      // Roll back the orphan invite so the host can retry cleanly instead of
+      // hitting the "Already invited" guard with no email ever sent.
+      await serviceClient.from("trip_invites").delete().eq("id", invite.id);
+      results.push({ email, success: false, error: emailError });
+      continue;
     }
+
+    results.push({ email, success: true });
   }
 
+  revalidatePath(`/trips/${parsed.data.trip_id}/invite`);
   return { data: results };
+}
+
+/** Re-send the email for an existing, unconsumed invite. */
+export async function resendInvite(inviteId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: invite } = await supabase
+    .from("trip_invites")
+    .select("id, trip_id, email, token, consumed_at")
+    .eq("id", inviteId)
+    .single();
+
+  if (!invite) return { error: "Invite not found" };
+  if (invite.consumed_at) return { error: "This guest has already joined" };
+
+  const { data: membership } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", invite.trip_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!membership || !["host", "co-host"].includes(membership.role)) {
+    return { error: "Only hosts can resend invites" };
+  }
+
+  const { data: trip } = await supabase
+    .from("trips")
+    .select("name, starts_on, ends_on")
+    .eq("id", invite.trip_id)
+    .single();
+
+  if (!trip) return { error: "Trip not found" };
+
+  const { data: hostUser } = await supabase
+    .from("users")
+    .select("display_name")
+    .eq("id", user.id)
+    .single();
+
+  const { error } = await deliverInviteEmail({
+    to: invite.email,
+    token: invite.token,
+    tripName: trip.name,
+    hostName: hostUser?.display_name || user.email || "Your host",
+    tripDates: formatTripDates(trip.starts_on, trip.ends_on),
+  });
+
+  if (error) return { error };
+  return { success: true };
+}
+
+/** Revoke (delete) an unconsumed invite token. */
+export async function revokeInvite(inviteId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: invite } = await supabase
+    .from("trip_invites")
+    .select("id, trip_id, consumed_at")
+    .eq("id", inviteId)
+    .single();
+
+  if (!invite) return { error: "Invite not found" };
+  if (invite.consumed_at) {
+    return { error: "This guest already joined — remove them from the trip instead" };
+  }
+
+  const { data: membership } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", invite.trip_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (!membership || !["host", "co-host"].includes(membership.role)) {
+    return { error: "Only hosts can remove invites" };
+  }
+
+  // trip_invites has no DELETE RLS policy — revoke via service-role after the
+  // host check above is the trust boundary (same pattern as grant issuance).
+  const serviceClient = await createServiceClient();
+  const { error } = await serviceClient
+    .from("trip_invites")
+    .delete()
+    .eq("id", inviteId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/trips/${invite.trip_id}/invite`);
+  return { success: true };
 }

@@ -37,15 +37,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Incorrect PIN" }, { status: 403 });
   }
 
-  // Upsert sensitive grant
-  await supabase
+  // Issue the sensitive grant via service-role: trip_grants has no INSERT
+  // RLS policy by design — this verified handler is the only path to a grant.
+  const { data: existingGrant } = await serviceClient
     .from("trip_grants")
-    .insert({
-      trip_id: tripId,
-      user_id: user.id,
-      level: "sensitive",
-      source: "pin-entry",
-    });
+    .select("id")
+    .eq("trip_id", tripId)
+    .eq("user_id", user.id)
+    .eq("level", "sensitive")
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+
+  if (!existingGrant) {
+    const { error: grantError } = await serviceClient
+      .from("trip_grants")
+      .insert({
+        trip_id: tripId,
+        user_id: user.id,
+        level: "sensitive",
+        source: "pin-entry",
+      });
+
+    if (grantError) {
+      return NextResponse.json({ error: grantError.message }, { status: 500 });
+    }
+  }
 
   return NextResponse.json({ success: true });
 }

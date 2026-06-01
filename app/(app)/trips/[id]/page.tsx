@@ -5,7 +5,7 @@ import { FeatureTiles } from "@/components/feature-tiles";
 import { CabinScene } from "@/components/illustrations";
 import { Button } from "@/components/ui/button";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   ArrowLeft,
   Calendar,
@@ -88,6 +88,22 @@ export default async function TripPage({ params }: TripPageProps) {
     .single();
 
   const hasSensitiveAccess = isHostRole(membership.role) || !!sensitiveGrant;
+
+  // Presence-only check via service-role (bypasses RLS): lets us show an
+  // ungranted guest the gated reveal prompt without leaking the values, which
+  // stay gated through `sensitiveInfo` above. A guest with no grant can't read
+  // trip_sensitive_info at all, so without this they'd see nothing to reveal.
+  const serviceClient = await createServiceClient();
+  const { data: rawSensitive } = await serviceClient
+    .from("trip_sensitive_info")
+    .select(
+      "wifi_ssid, wifi_password, door_code, gate_code, address_line, postal_code, parking_notes"
+    )
+    .eq("trip_id", id)
+    .maybeSingle();
+  const hasSensitiveData =
+    !!rawSensitive &&
+    Object.values(rawSensitive).some((v) => v !== null && v !== "");
 
   // Fetch user email for reveal dialog
   const { data: currentUser } = await supabase
@@ -294,6 +310,7 @@ export default async function TripPage({ params }: TripPageProps) {
           userRole={membership.role}
           requirePin={trip.require_pin_to_view}
           initialData={sensitiveInfo}
+          hasSensitiveData={hasSensitiveData}
           hasAccess={hasSensitiveAccess}
         />
 
