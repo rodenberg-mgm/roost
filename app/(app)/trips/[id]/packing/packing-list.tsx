@@ -18,6 +18,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 
+const PACKING_TABLES = ["packing_items", "packing_claims"];
+
 interface PackingListProps {
   tripId: string;
   initialItems: PackingItem[];
@@ -48,7 +50,7 @@ export function PackingList({
     queryClient.invalidateQueries({ queryKey: ["packing", tripId] });
   }, [queryClient, tripId]);
 
-  useTripChannel(tripId, invalidate);
+  useTripChannel(tripId, PACKING_TABLES, invalidate);
 
   const refetch = () => queryClient.invalidateQueries({ queryKey: ["packing", tripId] });
 
