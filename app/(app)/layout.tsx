@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/bottom-nav";
+import { Providers } from "@/components/providers";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -17,9 +18,11 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="min-h-screen bg-page pb-20">
-      <main className="mx-auto max-w-lg px-4 pt-6">{children}</main>
-      <BottomNav />
-    </div>
+    <Providers>
+      <div className="min-h-screen bg-page pb-20">
+        <main className="mx-auto max-w-lg px-4 pt-6">{children}</main>
+        <BottomNav />
+      </div>
+    </Providers>
   );
 }
