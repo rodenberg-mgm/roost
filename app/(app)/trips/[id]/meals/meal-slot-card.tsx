@@ -69,14 +69,20 @@ export function MealSlotCard({
     fields: Parameters<MealSlotCardProps["onSaveDetails"]>[1]
   ) {
     setSaving(true);
-    const res = await onSaveDetails(slot.id, fields);
-    setSaving(false);
-    if (res && "error" in res && res.error) {
-      setSaveError(res.error);
+    try {
+      const res = await onSaveDetails(slot.id, fields);
+      if (res && "error" in res && res.error) {
+        setSaveError(res.error);
+        return false;
+      }
+      setSaveError(null);
+      return true;
+    } catch {
+      setSaveError("Something went wrong. Try again.");
       return false;
+    } finally {
+      setSaving(false);
     }
-    setSaveError(null);
-    return true;
   }
 
   async function handleSave() {
@@ -87,7 +93,10 @@ export function MealSlotCard({
   }
 
   async function handleSwitchToCooking() {
-    if (await persist({ is_dining_out: false })) setEditing(false);
+    if (await persist({ is_dining_out: false })) {
+      setMeetTime("");
+      setEditing(false);
+    }
   }
 
   return (
@@ -255,8 +264,8 @@ export function MealSlotCard({
         </div>
       )}
 
-      {/* Cook sign-up toggle (cooking slots only) */}
-      {!dining && (
+      {/* Cook sign-up toggle (cooking slots only, hidden while editing) */}
+      {!dining && !editing && (
         <div className="mt-3">
           {isCook ? (
             <Button
