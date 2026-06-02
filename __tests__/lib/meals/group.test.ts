@@ -10,6 +10,8 @@ function slot(partial: Partial<MealSlot>): MealSlot {
     title: null,
     menu: null,
     notes: null,
+    is_dining_out: false,
+    meet_time: null,
     sort_order: 0,
     created_by_user_id: "u0",
     cooks: [],
@@ -49,6 +51,15 @@ describe("groupMealSlots", () => {
       "2026-05-17",
       "2026-05-18",
     ]);
+  });
+
+  it("sorts a dining-out dinner into the dinner position like any other meal", () => {
+    const days = groupMealSlots([
+      slot({ meal_type: "dinner", is_dining_out: true, title: "El Mexicano" }),
+      slot({ meal_type: "breakfast", title: "Pancakes" }),
+    ]);
+    expect(days[0].slots.map((s) => s.meal_type)).toEqual(["breakfast", "dinner"]);
+    expect(days[0].slots[1].is_dining_out).toBe(true);
   });
 
   it("breaks ties within a meal type by sort_order", () => {

@@ -66,14 +66,14 @@ export function MealsList({
   const save = useMutation({
     mutationFn: (v: {
       slotId: string;
-      fields: { title: string; menu: string; notes: string };
-    }) =>
-      updateMealSlot({
-        slot_id: v.slotId,
-        title: v.fields.title,
-        menu: v.fields.menu,
-        notes: v.fields.notes,
-      }),
+      fields: {
+        title?: string;
+        menu?: string;
+        notes?: string;
+        meet_time?: string | null;
+        is_dining_out?: boolean;
+      };
+    }) => updateMealSlot({ slot_id: v.slotId, ...v.fields }),
     onSettled: refetch,
   });
   const remove = useMutation({ mutationFn: (slotId: string) => deleteMealSlot(slotId), onSettled: refetch });
@@ -84,6 +84,8 @@ export function MealsList({
   const [day, setDay] = useState(startsOn ?? "");
   const [mealType, setMealType] = useState<MealType>("dinner");
   const [title, setTitle] = useState("");
+  const [diningOut, setDiningOut] = useState(false);
+  const [meetTime, setMeetTime] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
 
   const add = useMutation({
@@ -93,6 +95,8 @@ export function MealsList({
         day_date: day,
         meal_type: mealType,
         title: title.trim() || undefined,
+        is_dining_out: diningOut,
+        meet_time: diningOut ? meetTime.trim() || null : undefined,
       });
       if ("error" in res && res.error) {
         const err = res.error as unknown;
@@ -107,6 +111,8 @@ export function MealsList({
       setTitle("");
       setMealType("dinner");
       setDay(startsOn ?? "");
+      setDiningOut(false);
+      setMeetTime("");
       setAdding(false);
       setAddError(null);
     },
@@ -178,15 +184,68 @@ export function MealsList({
                 ))}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="meal-title">Title (optional)</Label>
-              <Input
-                id="meal-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Taco night"
-              />
-            </div>
+            {isHost && (
+              <div className="space-y-1.5">
+                <Label>This meal</Label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDiningOut(false)}
+                    className={`flex-1 rounded-button border px-3 py-2 text-sm transition-colors ${
+                      !diningOut
+                        ? "border-forest bg-forest/10 text-forest"
+                        : "border-subtle text-ink-light hover:text-forest"
+                    }`}
+                  >
+                    Cooking
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiningOut(true)}
+                    className={`flex-1 rounded-button border px-3 py-2 text-sm transition-colors ${
+                      diningOut
+                        ? "border-forest bg-forest/10 text-forest"
+                        : "border-subtle text-ink-light hover:text-forest"
+                    }`}
+                  >
+                    Eating out
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {diningOut ? (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="meal-place">Place</Label>
+                  <Input
+                    id="meal-place"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="El Mexicano"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="meal-meet-time">Meet time</Label>
+                  <Input
+                    id="meal-meet-time"
+                    value={meetTime}
+                    onChange={(e) => setMeetTime(e.target.value)}
+                    placeholder="7:00 PM"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="meal-title">Title (optional)</Label>
+                <Input
+                  id="meal-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Taco night"
+                />
+              </div>
+            )}
             {addError && <p className="text-sm text-brick">{addError}</p>}
             <div className="flex gap-2">
               <Button
@@ -196,6 +255,8 @@ export function MealsList({
                 onClick={() => {
                   setAdding(false);
                   setAddError(null);
+                  setDiningOut(false);
+                  setMeetTime("");
                 }}
               >
                 Cancel

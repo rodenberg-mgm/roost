@@ -7,6 +7,22 @@ import {
   type MealSlot,
 } from "@/lib/schemas/meals";
 
+/** True if the user is host/co-host of the trip. Used to gate the dining-out
+ *  fields, which RLS can't restrict per-column. */
+async function isHostOfTrip(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tripId: string,
+  userId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", tripId)
+    .eq("user_id", userId)
+    .single();
+  return !!data && (data.role === "host" || data.role === "co-host");
+}
+
 /** Fetch all meal slots for a trip with their cooks + cook names. */
 export async function getMeals(tripId: string): Promise<MealSlot[]> {
   const supabase = await createClient();
@@ -14,7 +30,7 @@ export async function getMeals(tripId: string): Promise<MealSlot[]> {
   const { data, error } = await supabase
     .from("meal_slots")
     .select(
-      "id, day_date, meal_type, title, menu, notes, sort_order, created_by_user_id, cooks:meal_cooks(id, user_id, users:user_id(display_name))"
+      "id, day_date, meal_type, title, menu, notes, is_dining_out, meet_time, sort_order, created_by_user_id, cooks:meal_cooks(id, user_id, users:user_id(display_name))"
     )
     .eq("trip_id", tripId)
     .order("day_date", { ascending: true });
@@ -28,6 +44,8 @@ export async function getMeals(tripId: string): Promise<MealSlot[]> {
     title: row.title,
     menu: row.menu,
     notes: row.notes,
+    is_dining_out: row.is_dining_out,
+    meet_time: row.meet_time,
     sort_order: row.sort_order,
     created_by_user_id: row.created_by_user_id,
     cooks: (row.cooks ?? []).map((c) => {
@@ -46,6 +64,8 @@ export async function addMealSlot(input: {
   day_date: string;
   meal_type: string;
   title?: string;
+  is_dining_out?: boolean;
+  meet_time?: string | null;
 }) {
   const parsed = addMealSlotSchema.safeParse(input);
   if (!parsed.success) {
@@ -57,6 +77,14 @@ export async function addMealSlot(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: { _form: ["Not authenticated"] } };
+
+  // Only host/co-host may create an eating-out meal.
+  if (parsed.data.is_dining_out) {
+    const isHost = await isHostOfTrip(supabase, parsed.data.trip_id, user.id);
+    if (!isHost) {
+      return { error: { _form: ["Only the host can set an eating-out meal"] } };
+    }
+  }
 
   // Lock the slot to the trip's date range (server-side; can't be bypassed).
   const { data: trip } = await supabase
@@ -77,6 +105,8 @@ export async function addMealSlot(input: {
     day_date: parsed.data.day_date,
     meal_type: parsed.data.meal_type,
     title: parsed.data.title || null,
+    is_dining_out: parsed.data.is_dining_out ?? false,
+    meet_time: parsed.data.meet_time || null,
     created_by_user_id: user.id,
   });
 
@@ -89,17 +119,45 @@ export async function updateMealSlot(input: {
   title?: string | null;
   menu?: string | null;
   notes?: string | null;
+  is_dining_out?: boolean;
+  meet_time?: string | null;
 }) {
   const parsed = updateMealSlotSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
+
+  const supabase = await createClient();
+
+  // The dining-out fields are host-only (RLS can't gate a single column).
+  const touchesDiningFields =
+    parsed.data.is_dining_out !== undefined || parsed.data.meet_time !== undefined;
+  if (touchesDiningFields) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
+    const { data: slot } = await supabase
+      .from("meal_slots")
+      .select("trip_id")
+      .eq("id", parsed.data.slot_id)
+      .single();
+    if (!slot) return { error: "Meal not found" };
+    if (!(await isHostOfTrip(supabase, slot.trip_id, user.id))) {
+      return { error: "Only the host can change eating-out details" };
+    }
+  }
 
   const patch: Record<string, unknown> = {};
   if (parsed.data.title !== undefined) patch.title = parsed.data.title || null;
   if (parsed.data.menu !== undefined) patch.menu = parsed.data.menu || null;
   if (parsed.data.notes !== undefined) patch.notes = parsed.data.notes || null;
+  if (parsed.data.meet_time !== undefined) patch.meet_time = parsed.data.meet_time || null;
+  if (parsed.data.is_dining_out !== undefined) {
+    patch.is_dining_out = parsed.data.is_dining_out;
+    // Switching back to cooking clears a stale meet time.
+    if (!parsed.data.is_dining_out) patch.meet_time = null;
+  }
   if (Object.keys(patch).length === 0) return { data: { ok: true } };
 
-  const supabase = await createClient();
   // RLS (meal_slots_cook_update) restricts writes to the host or a signed-up cook.
   // A blocked write affects 0 rows with no error, so check the count and report it.
   const { error, count } = await supabase

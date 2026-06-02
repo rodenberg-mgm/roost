@@ -8,6 +8,8 @@ export const addMealSlotSchema = z.object({
   day_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date"),
   meal_type: z.enum(MEAL_TYPES),
   title: z.string().max(200).optional(),
+  is_dining_out: z.boolean().optional(),
+  meet_time: z.string().max(100).nullable().optional(),
 });
 export type AddMealSlotInput = z.infer<typeof addMealSlotSchema>;
 
@@ -16,6 +18,8 @@ export const updateMealSlotSchema = z.object({
   title: z.string().max(200).nullable().optional(),
   menu: z.string().max(5000).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
+  is_dining_out: z.boolean().optional(),
+  meet_time: z.string().max(100).nullable().optional(),
 });
 export type UpdateMealSlotInput = z.infer<typeof updateMealSlotSchema>;
 
@@ -32,6 +36,8 @@ export interface MealSlot {
   title: string | null;
   menu: string | null;
   notes: string | null;
+  is_dining_out: boolean;
+  meet_time: string | null;
   sort_order: number;
   created_by_user_id: string;
   cooks: MealCook[];
