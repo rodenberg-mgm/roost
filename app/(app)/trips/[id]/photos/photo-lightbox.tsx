@@ -25,18 +25,22 @@ export function PhotoLightbox({
   onDelete,
 }: PhotoLightboxProps) {
   const photo = photos[index];
-  const [displayUrl, setDisplayUrl] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<{ path: string; url: string } | null>(null);
 
   useEffect(() => {
     let active = true;
-    setDisplayUrl(null);
     getDisplayUrl(photo.display_path).then((r) => {
-      if (active && "data" in r) setDisplayUrl(r.data ?? null);
+      if (active && "data" in r && r.data) {
+        setLoaded({ path: photo.display_path, url: r.data });
+      }
     });
     return () => {
       active = false;
     };
   }, [photo.display_path]);
+
+  // Only show the loaded URL if it belongs to the photo currently displayed.
+  const displayUrl = loaded?.path === photo.display_path ? loaded.url : null;
 
   const canDelete = isHost || photo.uploaded_by_user_id === currentUserId;
   const hasPrev = index > 0;
