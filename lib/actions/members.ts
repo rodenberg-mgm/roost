@@ -144,8 +144,23 @@ export async function removeMember(tripId: string, userId: string) {
   // this shape); the guards above are the trust boundary, same as revokeInvite.
   const svc = await createServiceClient();
 
-  await svc.from("trip_members").delete().eq("trip_id", tripId).eq("user_id", userId);
-  await svc.from("trip_grants").delete().eq("trip_id", tripId).eq("user_id", userId);
+  // Access revocation is the security-critical step — if it fails, do not report
+  // success (the member would keep access). The claim/signup cleanup below is
+  // best-effort.
+  const { error: memberDelErr } = await svc
+    .from("trip_members")
+    .delete()
+    .eq("trip_id", tripId)
+    .eq("user_id", userId);
+  if (memberDelErr) return { error: "Couldn't remove that member" };
+
+  const { error: grantDelErr } = await svc
+    .from("trip_grants")
+    .delete()
+    .eq("trip_id", tripId)
+    .eq("user_id", userId);
+  if (grantDelErr) return { error: "Couldn't fully revoke that member's access" };
+
   if (target?.email) {
     await svc
       .from("trip_invites")
