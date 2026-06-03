@@ -8,7 +8,10 @@
 drop policy if exists "trip_members_delete" on public.trip_members;
 create policy "trip_members_delete"
   on public.trip_members for delete
-  using (public.is_trip_host(trip_id));
+  using (
+    public.is_trip_host(trip_id)
+    and user_id <> (select host_user_id from public.trips where id = trip_id)
+  );
 
 -- ============================================================
 -- 2. Atomic host transfer
