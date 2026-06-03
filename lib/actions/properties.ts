@@ -25,9 +25,9 @@ export async function createProperty(input: CreatePropertyInput) {
       name: propertyFields.name,
       city: propertyFields.city || null,
       region: propertyFields.region || null,
-      house_rules: propertyFields.house_rules || null,
-      local_tips: propertyFields.local_tips || null,
-      stocked_items: propertyFields.stocked_items || [],
+      house_rules: propertyFields.house_rules ?? [],
+      local_tips: propertyFields.local_tips ?? [],
+      stocked_items: propertyFields.stocked_items ?? [],
     })
     .select("id")
     .single();
@@ -36,8 +36,9 @@ export async function createProperty(input: CreatePropertyInput) {
     return { error: { _form: [propError.message] } };
   }
 
-  // Insert sensitive info
-  await supabase
+  // Insert sensitive info — if this fails we must not leave an orphan property
+  // with the address/wifi/codes silently dropped.
+  const { error: sensError } = await supabase
     .from("property_sensitive_info")
     .insert({
       property_id: property.id,
@@ -49,6 +50,16 @@ export async function createProperty(input: CreatePropertyInput) {
       postal_code: postal_code || null,
       parking_notes: parking_notes || null,
     });
+
+  if (sensError) {
+    // Best-effort rollback: soft-delete the just-created property so we don't
+    // strand a property with no sensitive row.
+    await supabase
+      .from("properties")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", property.id);
+    return { error: { _form: [sensError.message] } };
+  }
 
   return { data: { id: property.id } };
 }
@@ -115,14 +126,10 @@ export async function updateProperty(
     name: propertyFields.name,
     city: propertyFields.city || null,
     region: propertyFields.region || null,
-    house_rules: propertyFields.house_rules || null,
-    local_tips: propertyFields.local_tips || null,
+    house_rules: propertyFields.house_rules ?? [],
+    local_tips: propertyFields.local_tips ?? [],
+    stocked_items: propertyFields.stocked_items ?? [],
   };
-  // Only touch stocked_items if the caller actually provided it — the form
-  // doesn't collect it, and we must not clobber existing items on edit.
-  if (propertyFields.stocked_items !== undefined) {
-    propertyUpdate.stocked_items = propertyFields.stocked_items;
-  }
 
   const { data: updated, error: propError } = await supabase
     .from("properties")
