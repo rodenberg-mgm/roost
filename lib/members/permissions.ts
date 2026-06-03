@@ -28,6 +28,10 @@ export function allowedMemberActions(input: AllowedActionsInput): MemberAction[]
   // The primary host is untouchable; you can't manage yourself here.
   if (target.isPrimaryHost || target.isSelf) return [];
 
+  // A host-role member is always the primary host in our data model; if one ever
+  // reaches here without that flag, deny rather than trust the inconsistent input.
+  if (target.role === "host") return [];
+
   const actions: MemberAction[] = [];
   if (target.role === "guest") actions.push("make-co-host");
   if (target.role === "co-host") actions.push("make-guest");

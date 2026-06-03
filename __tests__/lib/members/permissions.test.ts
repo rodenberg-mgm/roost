@@ -61,4 +61,20 @@ describe("allowedMemberActions", () => {
       allowedMemberActions({ actorRole: "host", actorIsPrimaryHost: true, target: target({ joined: false }) })
     ).not.toContain("transfer-host");
   });
+
+  it("lets a co-host promote/remove a guest but not transfer host", () => {
+    expect(
+      allowedMemberActions({ actorRole: "co-host", actorIsPrimaryHost: false, target: target({ role: "guest" }) })
+    ).toEqual(["make-co-host", "remove"]);
+  });
+
+  it("denies all actions on a host-role target that isn't the primary host", () => {
+    expect(
+      allowedMemberActions({
+        actorRole: "host",
+        actorIsPrimaryHost: true,
+        target: target({ role: "host", isPrimaryHost: false }),
+      })
+    ).toEqual([]);
+  });
 });
