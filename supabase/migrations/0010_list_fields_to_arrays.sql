@@ -2,6 +2,9 @@
 -- house_rules and local_tips become string arrays (jsonb) to match stocked_items.
 -- Existing text is backfilled by splitting on newlines into trimmed, non-empty items.
 
+-- Atomic: applied manually in the SQL editor, so wrap the whole conversion.
+begin;
+
 create or replace function pg_temp.text_to_jsonb_lines(t text)
 returns jsonb language sql immutable as $$
   select case
@@ -44,3 +47,5 @@ alter table public.trips
 alter table public.trips
   alter column local_tips set default '[]'::jsonb,
   alter column local_tips set not null;
+
+commit;
