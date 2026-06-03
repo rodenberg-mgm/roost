@@ -1,5 +1,7 @@
 import { InviteForm } from "@/components/invite-form";
 import { InviteList } from "@/components/invite-list";
+import { MemberList } from "@/components/member-list";
+import { getMembers } from "@/lib/actions/members";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
@@ -25,7 +27,8 @@ export default async function InvitePage({ params }: InvitePageProps) {
     .eq("id", id)
     .single();
 
-  // Fetch existing invites
+  const members = await getMembers(id);
+
   const { data: invites } = await supabase
     .from("trip_invites")
     .select("id, email, consumed_at, created_at")
@@ -37,19 +40,30 @@ export default async function InvitePage({ params }: InvitePageProps) {
       <header className="mb-6">
         <Link
           href={`/trips/${id}`}
-          className="mb-4 inline-flex items-center gap-1 text-sm text-ink-light hover:text-ink"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-ink-light transition-colors hover:text-forest"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to trip
         </Link>
-        <h1 className="font-display text-2xl font-bold text-ink">Invite Guests</h1>
+        <h1 className="font-display text-2xl font-bold text-ink">Members</h1>
         <p className="mt-1 text-sm text-ink-light">
-          Send invite links to {trip?.name || "your trip"}
+          Manage who&apos;s on {trip?.name || "your trip"} and invite more guests.
         </p>
       </header>
 
       <div className="space-y-4">
+        <div className="rounded-card border bg-card p-5 shadow-card">
+          <h2 className="mb-3 font-semibold text-ink">On this trip</h2>
+          <MemberList
+            tripId={id}
+            members={members}
+            currentUserId={membership.userId}
+            currentUserRole={membership.role}
+          />
+        </div>
+
         <div className="rounded-card border bg-card p-6 shadow-card">
+          <h2 className="mb-3 font-semibold text-ink">Invite guests</h2>
           <InviteForm tripId={id} />
         </div>
 
