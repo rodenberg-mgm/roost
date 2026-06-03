@@ -130,19 +130,39 @@ export async function recordPhoto(input: unknown) {
   return { data: { ok: true } };
 }
 
-/** Signed URL for the display (lightbox) rendition. */
-export async function getDisplayUrl(displayPath: string) {
+/** Signed URL for the display (lightbox) rendition. Takes a photoId (not a
+ *  path): the row fetch is gated by the photos select RLS, so a non-member
+ *  gets no row and no URL. Never trusts a client-supplied storage path —
+ *  signed URLs bypass storage RLS, so authorization must happen here. */
+export async function getDisplayUrl(photoId: string) {
+  const supabase = await createClient();
+  const { data: photo } = await supabase
+    .from("photos")
+    .select("display_path")
+    .eq("id", photoId)
+    .is("deleted_at", null)
+    .single();
+  if (!photo) return { error: "Photo not found" };
   try {
-    return { data: await signedUrl(displayPath) };
+    return { data: await signedUrl(photo.display_path) };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "URL failed" };
   }
 }
 
-/** Signed URL for the original (download). */
-export async function getOriginalUrl(originalPath: string) {
+/** Signed URL for the original (download). Same photoId + RLS reauthorization
+ *  as getDisplayUrl. */
+export async function getOriginalUrl(photoId: string) {
+  const supabase = await createClient();
+  const { data: photo } = await supabase
+    .from("photos")
+    .select("original_path")
+    .eq("id", photoId)
+    .is("deleted_at", null)
+    .single();
+  if (!photo) return { error: "Photo not found" };
   try {
-    return { data: await signedUrl(originalPath) };
+    return { data: await signedUrl(photo.original_path) };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "URL failed" };
   }

@@ -29,7 +29,7 @@ export function PhotoLightbox({
 
   useEffect(() => {
     let active = true;
-    getDisplayUrl(photo.display_path).then((r) => {
+    getDisplayUrl(photo.id).then((r) => {
       if (active && "data" in r && r.data) {
         setLoaded({ path: photo.display_path, url: r.data });
       }
@@ -47,7 +47,7 @@ export function PhotoLightbox({
   const hasNext = index < photos.length - 1;
 
   async function download() {
-    const r = await getOriginalUrl(photo.original_path);
+    const r = await getOriginalUrl(photo.id);
     if ("data" in r) window.open(r.data, "_blank");
   }
 
