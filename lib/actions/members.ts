@@ -45,13 +45,8 @@ async function loadContext(
 /** All members of a trip with name/email/role/joined + primary-host flag. */
 export async function getMembers(tripId: string): Promise<Member[]> {
   const supabase = await createClient();
-
-  const { data: trip } = await supabase
-    .from("trips")
-    .select("host_user_id")
-    .eq("id", tripId)
-    .single();
-  if (!trip) return [];
+  const ctx = await loadContext(supabase, tripId);
+  if (!ctx) return [];
 
   const { data, error } = await supabase
     .from("trip_members")
@@ -69,7 +64,7 @@ export async function getMembers(tripId: string): Promise<Member[]> {
       email: u?.email ?? row.invited_email ?? "",
       role: row.role as MemberRole,
       joined: !!row.joined_at,
-      is_primary_host: row.user_id === trip.host_user_id,
+      is_primary_host: row.user_id === ctx.hostUserId,
     };
   });
 }
@@ -170,11 +165,7 @@ export async function removeMember(tripId: string, userId: string) {
       .is("consumed_at", null);
   }
   // Release their contributions so they reassign (keep photos).
-  await svc
-    .from("packing_items")
-    .update({ claimed_by_user_id: null, claimed_at: null })
-    .eq("trip_id", tripId)
-    .eq("claimed_by_user_id", userId);
+  await svc.from("packing_claims").delete().eq("trip_id", tripId).eq("user_id", userId);
   await svc.from("meal_cooks").delete().eq("trip_id", tripId).eq("user_id", userId);
 
   revalidatePath(`/trips/${tripId}/invite`);
