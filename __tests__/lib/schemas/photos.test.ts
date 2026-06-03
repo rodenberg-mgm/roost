@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { recordPhotoSchema } from "@/lib/schemas/photos";
 
 const base = {
-  id: "11111111-1111-1111-1111-111111111111",
-  trip_id: "22222222-2222-2222-2222-222222222222",
+  id: "11111111-1111-4111-8111-111111111111",
+  trip_id: "22222222-2222-4222-8222-222222222222",
   thumb_path: "trips/t/photos/p/thumb.jpg",
   display_path: "trips/t/photos/p/display.jpg",
   original_path: "trips/t/photos/p/original.heic",
