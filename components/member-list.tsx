@@ -4,7 +4,7 @@ import { allowedMemberActions } from "@/lib/members/permissions";
 import { setMemberRole, removeMember, transferHost, type Member } from "@/lib/actions/members";
 import { Crown, Loader2, MoreVertical, Trash2, UserMinus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 
 interface MemberListProps {
   tripId: string;
@@ -28,6 +28,20 @@ export function MemberList({ tripId, members, currentUserId, currentUserRole }: 
   const [error, setError] = useState<string | null>(null);
 
   const actorIsPrimaryHost = members.some((m) => m.user_id === currentUserId && m.is_primary_host);
+
+  useEffect(() => {
+    if (openFor === null) return;
+    const close = () => setOpenFor(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenFor(null);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openFor]);
 
   async function run(p: Promise<{ error?: string } | { data: unknown }>) {
     setBusy(true);
@@ -76,12 +90,13 @@ export function MemberList({ tripId, members, currentUserId, currentUserRole }: 
                   type="button"
                   aria-label={`Manage ${m.name}`}
                   onClick={() => setOpenFor(openFor === m.user_id ? null : m.user_id)}
+                  onPointerDown={(e) => e.stopPropagation()}
                   className="flex h-8 w-8 items-center justify-center rounded-button text-ink-light transition-colors hover:bg-sand/50 hover:text-forest"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </button>
                 {openFor === m.user_id && (
-                  <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-card border bg-card shadow-card">
+                  <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-card border bg-card shadow-card" onPointerDown={(e) => e.stopPropagation()}>
                     {actions.includes("make-co-host") && (
                       <MenuItem icon={UserPlus} label="Make co-host" disabled={busy}
                         onClick={() => run(setMemberRole(tripId, m.user_id, "co-host"))} />
