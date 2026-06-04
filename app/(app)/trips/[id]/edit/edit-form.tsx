@@ -4,6 +4,7 @@ import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ListEditor } from "@/components/ui/list-editor";
 import { updateTrip } from "@/lib/actions/trips";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -17,8 +18,8 @@ interface EditFormProps {
     ends_on: string | null;
     city: string | null;
     region: string | null;
-    house_rules: string | null;
-    local_tips: string | null;
+    house_rules: string[];
+    local_tips: string[];
     stocked_items: string[];
   };
   sensitiveData: {
@@ -36,9 +37,6 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [stockedInput, setStockedInput] = useState(
-    initialData.stocked_items.join(", ")
-  );
 
   // Location fields are controlled so address autocomplete can prefill them.
   const [city, setCity] = useState(initialData.city || "");
@@ -46,6 +44,15 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
   const [addressLine, setAddressLine] = useState(sensitiveData?.address_line || "");
   const [postalCode, setPostalCode] = useState(sensitiveData?.postal_code || "");
   const [prefilledFromAddress, setPrefilledFromAddress] = useState(false);
+
+  const parseList = (v: FormDataEntryValue | null): string[] => {
+    try {
+      const arr = JSON.parse((v as string) || "[]");
+      return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,12 +67,9 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
       ends_on: (fd.get("ends_on") as string) || null,
       city: city || undefined,
       region: region || undefined,
-      house_rules: (fd.get("house_rules") as string) || undefined,
-      local_tips: (fd.get("local_tips") as string) || undefined,
-      stocked_items: stockedInput
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      house_rules: parseList(fd.get("house_rules")),
+      local_tips: parseList(fd.get("local_tips")),
+      stocked_items: parseList(fd.get("stocked_items")),
       wifi_ssid: (fd.get("wifi_ssid") as string) || undefined,
       wifi_password: (fd.get("wifi_password") as string) || undefined,
       door_code: (fd.get("door_code") as string) || undefined,
@@ -167,18 +171,21 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="house_rules">House rules</Label>
-          <textarea id="house_rules" name="house_rules" rows={4} defaultValue={initialData.house_rules || ""} className={textareaClass} />
+          <Label>House rules</Label>
+          <ListEditor name="house_rules" initialItems={initialData.house_rules}
+            placeholder="No shoes inside" addLabel="Add a house rule" />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="local_tips">Local tips</Label>
-          <textarea id="local_tips" name="local_tips" rows={4} defaultValue={initialData.local_tips || ""} className={textareaClass} />
+          <Label>Local tips</Label>
+          <ListEditor name="local_tips" initialItems={initialData.local_tips}
+            placeholder="Best coffee on the square" addLabel="Add a local tip" />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="stocked_items">Stocked items (comma-separated)</Label>
-          <Input id="stocked_items" value={stockedInput} onChange={(e) => setStockedInput(e.target.value)} placeholder="Coffee, paper towels, firewood" />
+          <Label>Stocked items</Label>
+          <ListEditor name="stocked_items" initialItems={initialData.stocked_items}
+            placeholder="Coffee" addLabel="Add a stocked item" />
         </div>
       </div>
 
