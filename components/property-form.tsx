@@ -1,5 +1,6 @@
 "use client";
 
+import { AddressAutocomplete } from "@/components/address-autocomplete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +33,12 @@ export function PropertyForm({
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [addressLine, setAddressLine] = useState(initialValues?.address_line || "");
+  const [city, setCity] = useState(initialValues?.city || "");
+  const [region, setRegion] = useState(initialValues?.region || "");
+  const [postalCode, setPostalCode] = useState(initialValues?.postal_code || "");
+  const [prefilledFromAddress, setPrefilledFromAddress] = useState(false);
+
   function getInputValue(name: string): string {
     if (!containerRef.current) return "";
     const el = containerRef.current.querySelector(`[name="${name}"]`) as HTMLInputElement | HTMLTextAreaElement | null;
@@ -54,8 +61,8 @@ export function PropertyForm({
 
     const input: CreatePropertyInput = {
       name: getInputValue("name"),
-      city: getInputValue("city") || undefined,
-      region: getInputValue("region") || undefined,
+      city: city || undefined,
+      region: region || undefined,
       house_rules: parseList("house_rules"),
       local_tips: parseList("local_tips"),
       stocked_items: parseList("stocked_items"),
@@ -63,8 +70,8 @@ export function PropertyForm({
       wifi_password: getInputValue("wifi_password") || undefined,
       door_code: getInputValue("door_code") || undefined,
       gate_code: getInputValue("gate_code") || undefined,
-      address_line: getInputValue("address_line") || undefined,
-      postal_code: getInputValue("postal_code") || undefined,
+      address_line: addressLine || undefined,
+      postal_code: postalCode || undefined,
       parking_notes: getInputValue("parking_notes") || undefined,
     };
 
@@ -96,16 +103,51 @@ export function PropertyForm({
           {errors.name && <p className="text-sm text-red-600">{errors.name[0]}</p>}
         </div>
 
+        {/* Location — address leads and auto-fills the public city/state/zip */}
+        <div className="space-y-2">
+          <Label htmlFor="prop-address">Address</Label>
+          <AddressAutocomplete
+            id="prop-address"
+            value={addressLine}
+            onChange={setAddressLine}
+            onSelect={({ city: c, region: r, postalCode: pc }) => {
+              if (c) setCity(c);
+              if (r) setRegion(r);
+              if (pc) setPostalCode(pc);
+              if (c || r) setPrefilledFromAddress(true);
+            }}
+          />
+          <p className="text-xs text-ink-light">
+            Start here — we&apos;ll fill in city, state &amp; zip. Kept private; only verified guests see the full address.
+          </p>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="prop-city">City</Label>
-            <Input id="prop-city" name="city" placeholder="Sonoma" defaultValue={initialValues?.city} />
+            <Input id="prop-city" name="city" value={city}
+              onChange={(e) => { setCity(e.target.value); setPrefilledFromAddress(false); }}
+              placeholder="Sonoma" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="prop-region">State / Region</Label>
-            <Input id="prop-region" name="region" placeholder="California" defaultValue={initialValues?.region} />
+            <Input id="prop-region" name="region" value={region}
+              onChange={(e) => setRegion(e.target.value)} placeholder="California" />
           </div>
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="prop-postal">Postal code</Label>
+            <Input id="prop-postal" name="postal_code" value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)} placeholder="95476" />
+          </div>
+        </div>
+        {prefilledFromAddress && (
+          <p className="-mt-1 text-xs text-ink-light">
+            City &amp; state filled from the address — edit if needed. Shown publicly instead of your address.
+          </p>
+        )}
 
         <div className="space-y-2">
           <Label>House rules</Label>
@@ -132,18 +174,6 @@ export function PropertyForm({
         <p className="text-xs text-ink-light">
           This info is stored separately and only shown to verified guests.
         </p>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="prop-address">Address</Label>
-            <Input id="prop-address" name="address_line" placeholder="123 Vineyard Ln" defaultValue={initialValues?.address_line} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="prop-postal">Postal code</Label>
-            <Input id="prop-postal" name="postal_code" placeholder="95476" defaultValue={initialValues?.postal_code} />
-          </div>
-        </div>
-        <p className="text-xs text-ink-light">Where the place is. Kept private — only verified guests can see it.</p>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
