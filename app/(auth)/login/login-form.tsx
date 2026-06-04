@@ -1,52 +1,58 @@
 "use client";
 
+import { OtpCodeStep } from "@/components/auth/otp-code-step";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [step, setStep] = useState<"email" | "code">("email");
   const [error, setError] = useState<string | null>(null);
+
+  async function sendCode() {
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (authError) throw new Error(authError.message);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    setLoading(false);
-
-    if (authError) {
-      setError(authError.message);
+    try {
+      await sendCode();
+    } catch (err) {
+      setLoading(false);
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
       return;
     }
 
-    setSent(true);
+    setLoading(false);
+    setStep("code");
   }
 
-  if (sent) {
+  if (step === "code") {
     return (
-      <div className="rounded-card border bg-card p-6 text-center shadow-card">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-forest/10">
-          <Mail className="h-6 w-6 text-forest" />
-        </div>
-        <h2 className="text-lg font-semibold text-ink">Check your email</h2>
-        <p className="mt-2 text-sm text-ink-light">
-          We sent a magic link to <strong>{email}</strong>. Click it to sign in.
-        </p>
-      </div>
+      <OtpCodeStep
+        email={email}
+        onVerified={() => {
+          router.push("/dashboard");
+          router.refresh();
+        }}
+        onResend={sendCode}
+        onChangeEmail={() => setStep("email")}
+      />
     );
   }
 
@@ -81,7 +87,7 @@ export function LoginForm() {
               Sending...
             </>
           ) : (
-            "Send magic link"
+            "Email me a code"
           )}
         </Button>
       </div>
