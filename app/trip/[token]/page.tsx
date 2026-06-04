@@ -153,15 +153,29 @@ export default async function TripViewPage({ params }: TripViewProps) {
             </ul>
           </TripInfoSection>
 
-          {trip.house_rules && (
+          {(trip.house_rules as string[])?.length > 0 && (
             <TripInfoSection icon={ScrollText} title="House Rules">
-              <p className="whitespace-pre-wrap text-sm text-ink">{trip.house_rules}</p>
+              <ul className="space-y-1.5">
+                {(trip.house_rules as string[]).map((item: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-ink">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-forest/40" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </TripInfoSection>
           )}
 
-          {trip.local_tips && (
+          {(trip.local_tips as string[])?.length > 0 && (
             <TripInfoSection icon={Lightbulb} title="Local Tips">
-              <p className="whitespace-pre-wrap text-sm text-ink">{trip.local_tips}</p>
+              <ul className="space-y-1.5">
+                {(trip.local_tips as string[]).map((item: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-ink">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-forest/40" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </TripInfoSection>
           )}
 
