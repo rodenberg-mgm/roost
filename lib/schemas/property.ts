@@ -4,9 +4,9 @@ export const createPropertySchema = z.object({
   name: z.string().min(1, "Property name is required").max(100),
   city: z.string().max(100).optional(),
   region: z.string().max(100).optional(),
-  house_rules: z.string().max(5000).optional(),
-  local_tips: z.string().max(5000).optional(),
-  stocked_items: z.array(z.string()).optional(),
+  house_rules: z.array(z.string().max(200)).max(50).optional(),
+  local_tips: z.array(z.string().max(200)).max(50).optional(),
+  stocked_items: z.array(z.string().max(200)).max(50).optional(),
   // Sensitive fields
   wifi_ssid: z.string().max(100).optional(),
   wifi_password: z.string().max(100).optional(),

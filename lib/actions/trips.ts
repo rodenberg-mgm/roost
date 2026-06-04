@@ -70,8 +70,8 @@ export async function updateTrip(tripId: string, input: {
   ends_on?: string | null;
   city?: string;
   region?: string;
-  house_rules?: string;
-  local_tips?: string;
+  house_rules?: string[];
+  local_tips?: string[];
   stocked_items?: string[];
   wifi_ssid?: string;
   wifi_password?: string;

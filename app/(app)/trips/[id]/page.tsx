@@ -280,14 +280,21 @@ export default async function TripPage({ params }: TripPageProps) {
         </TripInfoSection>
 
         {/* House Rules — shown to all when present; empty "Add" prompt for hosts */}
-        {(trip.house_rules || canEdit) && (
+        {((trip.house_rules as string[])?.length > 0 || canEdit) && (
           <TripInfoSection
             icon={ScrollText}
             title="House Rules"
-            action={trip.house_rules && canEdit ? <EditLink href={`/trips/${id}/edit`} /> : undefined}
+            action={(trip.house_rules as string[])?.length > 0 && canEdit ? <EditLink href={`/trips/${id}/edit`} /> : undefined}
           >
-            {trip.house_rules ? (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{trip.house_rules}</p>
+            {(trip.house_rules as string[])?.length > 0 ? (
+              <ul className="space-y-1.5">
+                {(trip.house_rules as string[]).map((item: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-ink">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-forest/40" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             ) : (
               <AddPrompt href={`/trips/${id}/edit`} label="Add house rules" />
             )}
@@ -295,14 +302,21 @@ export default async function TripPage({ params }: TripPageProps) {
         )}
 
         {/* Local Tips */}
-        {(trip.local_tips || canEdit) && (
+        {((trip.local_tips as string[])?.length > 0 || canEdit) && (
           <TripInfoSection
             icon={Lightbulb}
             title="Local Tips"
-            action={trip.local_tips && canEdit ? <EditLink href={`/trips/${id}/edit`} /> : undefined}
+            action={(trip.local_tips as string[])?.length > 0 && canEdit ? <EditLink href={`/trips/${id}/edit`} /> : undefined}
           >
-            {trip.local_tips ? (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink">{trip.local_tips}</p>
+            {(trip.local_tips as string[])?.length > 0 ? (
+              <ul className="space-y-1.5">
+                {(trip.local_tips as string[]).map((item: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-ink">
+                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-forest/40" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             ) : (
               <AddPrompt href={`/trips/${id}/edit`} label="Add local tips" />
             )}

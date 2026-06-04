@@ -26,6 +26,7 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
     region: property.region ?? undefined,
     house_rules: property.house_rules ?? undefined,
     local_tips: property.local_tips ?? undefined,
+    stocked_items: property.stocked_items ?? undefined,
     wifi_ssid: sensitive?.wifi_ssid ?? undefined,
     wifi_password: sensitive?.wifi_password ?? undefined,
     door_code: sensitive?.door_code ?? undefined,

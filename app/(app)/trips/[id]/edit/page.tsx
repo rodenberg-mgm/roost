@@ -50,6 +50,8 @@ export default async function EditTripPage({ params }: EditPageProps) {
           tripId={id}
           initialData={{
             ...trip,
+            house_rules: (trip.house_rules as string[]) || [],
+            local_tips: (trip.local_tips as string[]) || [],
             stocked_items: (trip.stocked_items as string[]) || [],
           }}
           sensitiveData={sensitiveInfo}

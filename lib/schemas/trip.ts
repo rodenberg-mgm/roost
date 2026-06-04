@@ -12,9 +12,9 @@ export const createTripSchema = z.object({
 export type CreateTripInput = z.infer<typeof createTripSchema>;
 
 export const updateTripSchema = createTripSchema.partial().extend({
-  house_rules: z.string().max(5000).optional(),
-  local_tips: z.string().max(5000).optional(),
-  stocked_items: z.array(z.string()).optional(),
+  house_rules: z.array(z.string().max(200)).max(50).optional(),
+  local_tips: z.array(z.string().max(200)).max(50).optional(),
+  stocked_items: z.array(z.string().max(200)).max(50).optional(),
 });
 
 export type UpdateTripInput = z.infer<typeof updateTripSchema>;
