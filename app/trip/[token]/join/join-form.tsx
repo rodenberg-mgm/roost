@@ -1,11 +1,13 @@
 // app/trip/[token]/join/join-form.tsx
 "use client";
 
+import { OtpCodeStep } from "@/components/auth/otp-code-step";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface JoinFormProps {
@@ -14,50 +16,50 @@ interface JoinFormProps {
 }
 
 export function JoinForm({ token, inviteEmail }: JoinFormProps) {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState(inviteEmail || "");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [step, setStep] = useState<"form" | "code">("form");
   const [error, setError] = useState<string | null>(null);
+
+  async function sendCode() {
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/trip/${token}/join/complete`,
+        data: { display_name: name },
+      },
+    });
+    if (authError) throw new Error(authError.message);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-
-    const { error: authError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/trip/${token}/join/complete`,
-        data: {
-          display_name: name,
-        },
-      },
-    });
-
-    setLoading(false);
-
-    if (authError) {
-      setError(authError.message);
+    try {
+      await sendCode();
+    } catch (err) {
+      setLoading(false);
+      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
       return;
     }
 
-    setSent(true);
+    setLoading(false);
+    setStep("code");
   }
 
-  if (sent) {
+  if (step === "code") {
     return (
-      <div className="rounded-card border bg-card p-6 text-center shadow-card">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-forest/10">
-          <Mail className="h-6 w-6 text-forest" />
-        </div>
-        <h2 className="text-lg font-semibold text-ink">Check your email</h2>
-        <p className="mt-2 text-sm text-ink-light">
-          We sent a link to <strong>{email}</strong>. Click it to join the trip.
-        </p>
-      </div>
+      <OtpCodeStep
+        email={email}
+        onVerified={() => router.push(`/trip/${token}/join/complete`)}
+        onResend={sendCode}
+        onChangeEmail={() => setStep("form")}
+      />
     );
   }
 
@@ -65,7 +67,7 @@ export function JoinForm({ token, inviteEmail }: JoinFormProps) {
     <form onSubmit={handleSubmit} className="rounded-card border bg-card p-6 shadow-card">
       <h2 className="mb-4 text-lg font-semibold text-ink">Join this trip</h2>
       <p className="mb-4 text-sm text-ink-light">
-        Just your name and email — we&apos;ll send a link to confirm.
+        Just your name and email — we&apos;ll send a 6-digit code (and a link).
       </p>
 
       <div className="space-y-4">
@@ -106,7 +108,7 @@ export function JoinForm({ token, inviteEmail }: JoinFormProps) {
               Sending...
             </>
           ) : (
-            "Send magic link"
+            "Email me a code"
           )}
         </Button>
       </div>
