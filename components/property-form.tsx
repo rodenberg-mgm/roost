@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ListEditor } from "@/components/ui/list-editor";
 import { createProperty, updateProperty } from "@/lib/actions/properties";
 import type { CreatePropertyInput } from "@/lib/schemas/property";
 import { Loader2 } from "lucide-react";
@@ -42,12 +43,22 @@ export function PropertyForm({
     setLoading(true);
     setErrors({});
 
+    const parseList = (name: string): string[] => {
+      try {
+        const v = JSON.parse(getInputValue(name) || "[]");
+        return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+      } catch {
+        return [];
+      }
+    };
+
     const input: CreatePropertyInput = {
       name: getInputValue("name"),
       city: getInputValue("city") || undefined,
       region: getInputValue("region") || undefined,
-      house_rules: getInputValue("house_rules") || undefined,
-      local_tips: getInputValue("local_tips") || undefined,
+      house_rules: parseList("house_rules"),
+      local_tips: parseList("local_tips"),
+      stocked_items: parseList("stocked_items"),
       wifi_ssid: getInputValue("wifi_ssid") || undefined,
       wifi_password: getInputValue("wifi_password") || undefined,
       door_code: getInputValue("door_code") || undefined,
@@ -97,27 +108,21 @@ export function PropertyForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="prop-rules">House rules</Label>
-          <textarea
-            id="prop-rules"
-            name="house_rules"
-            rows={3}
-            placeholder="No shoes inside, quiet hours after 10pm..."
-            defaultValue={initialValues?.house_rules}
-            className="w-full rounded-input border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
+          <Label>House rules</Label>
+          <ListEditor name="house_rules" initialItems={initialValues?.house_rules}
+            placeholder="No shoes inside" addLabel="Add a house rule" />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="prop-tips">Local tips</Label>
-          <textarea
-            id="prop-tips"
-            name="local_tips"
-            rows={3}
-            placeholder="Best coffee: Blue Barn on the square..."
-            defaultValue={initialValues?.local_tips}
-            className="w-full rounded-input border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
+          <Label>Local tips</Label>
+          <ListEditor name="local_tips" initialItems={initialValues?.local_tips}
+            placeholder="Best coffee: Blue Barn on the square" addLabel="Add a local tip" />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Stocked items</Label>
+          <ListEditor name="stocked_items" initialItems={initialValues?.stocked_items}
+            placeholder="Coffee" addLabel="Add a stocked item" />
         </div>
       </div>
 
@@ -127,6 +132,18 @@ export function PropertyForm({
         <p className="text-xs text-ink-light">
           This info is stored separately and only shown to verified guests.
         </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="prop-address">Address</Label>
+            <Input id="prop-address" name="address_line" placeholder="123 Vineyard Ln" defaultValue={initialValues?.address_line} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="prop-postal">Postal code</Label>
+            <Input id="prop-postal" name="postal_code" placeholder="95476" defaultValue={initialValues?.postal_code} />
+          </div>
+        </div>
+        <p className="text-xs text-ink-light">Where the place is. Kept private — only verified guests can see it.</p>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
@@ -147,17 +164,6 @@ export function PropertyForm({
           <div className="space-y-2">
             <Label htmlFor="prop-gate">Gate code</Label>
             <Input id="prop-gate" name="gate_code" defaultValue={initialValues?.gate_code} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="prop-address">Address</Label>
-            <Input id="prop-address" name="address_line" placeholder="123 Vineyard Ln" defaultValue={initialValues?.address_line} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="prop-postal">Postal code</Label>
-            <Input id="prop-postal" name="postal_code" placeholder="95476" defaultValue={initialValues?.postal_code} />
           </div>
         </div>
 
