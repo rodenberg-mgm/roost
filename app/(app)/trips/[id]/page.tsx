@@ -3,6 +3,8 @@ import { SensitiveInfoSection } from "@/components/sensitive-info-section";
 import { StampBadge } from "@/components/stamp-badge";
 import { FeatureTiles } from "@/components/feature-tiles";
 import { PropertyLinkChip } from "@/components/property-link-chip";
+import { TripWeather } from "@/components/trip-weather";
+import { getTripWeather } from "@/lib/weather/open-meteo";
 import { CabinScene } from "@/components/illustrations";
 import { Button } from "@/components/ui/button";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
@@ -10,6 +12,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   ArrowLeft,
   Calendar,
+  CloudSun,
   MapPin,
   Users,
   ScrollText,
@@ -135,6 +138,15 @@ export default async function TripPage({ params }: TripPageProps) {
     }
   }
 
+  // Weather for the trip's public location + dates. Never throws — falls back to
+  // an "unavailable" status that renders nothing, so the page can't break on it.
+  const weather = await getTripWeather({
+    city: trip.city,
+    region: trip.region,
+    startsOn: trip.starts_on,
+    endsOn: trip.ends_on,
+  });
+
   const formatDate = (date: string | null) => {
     if (!date) return null;
     return new Date(date + "T00:00:00").toLocaleDateString("en-US", {
@@ -234,6 +246,15 @@ export default async function TripPage({ params }: TripPageProps) {
             </p>
           </TripInfoSection>
         )}
+
+        {/* Weather — only when there's something to show (skip past/unavailable;
+            skip the host-only "set dates" hint for non-host viewers) */}
+        {weather.status !== "unavailable" && weather.status !== "past" &&
+          !(weather.status === "tbd" && !canEdit) && (
+            <TripInfoSection icon={CloudSun} title="Weather">
+              <TripWeather weather={weather} canEdit={canEdit} />
+            </TripInfoSection>
+          )}
 
         {/* Guests */}
         <TripInfoSection
