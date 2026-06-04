@@ -43,3 +43,6 @@ design-system/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local email-template previews (generated with sample data)
+supabase/email-templates/*.preview.html

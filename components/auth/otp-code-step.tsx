@@ -7,6 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 import { Loader2, Mail } from "lucide-react";
 import { useState } from "react";
 
+// Supabase's email OTP length is a per-project setting (6–10 digits; default 6).
+// Accept the full supported range so the input never truncates a longer code —
+// `verifyOtp` is the source of truth for whether the code is actually valid.
+const OTP_MIN_LENGTH = 6;
+const OTP_MAX_LENGTH = 10;
+
 interface OtpCodeStepProps {
   email: string;
   /** Called after a successful verifyOtp (session is now set). */
@@ -61,21 +67,21 @@ export function OtpCodeStep({ email, onVerified, onResend, onChangeEmail }: OtpC
       </div>
       <h2 className="text-lg font-semibold text-ink">Check your email</h2>
       <p className="mt-2 text-sm text-ink-light">
-        Enter the 6-digit code we sent to <strong>{email}</strong>, or just click the link in the email.
+        Enter the code we sent to <strong>{email}</strong>, or just click the link in the email.
       </p>
 
       <div className="mt-5 space-y-2 text-left">
-        <Label htmlFor="otp-code">6-digit code</Label>
+        <Label htmlFor="otp-code">Verification code</Label>
         <Input
           id="otp-code"
           inputMode="numeric"
           autoComplete="one-time-code"
-          maxLength={6}
+          maxLength={OTP_MAX_LENGTH}
           value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          placeholder="123456"
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, OTP_MAX_LENGTH))}
+          placeholder="••••••"
           autoFocus
-          className="text-center text-lg tracking-[0.4em]"
+          className="text-center text-lg tracking-[0.3em]"
         />
       </div>
 
@@ -84,7 +90,7 @@ export function OtpCodeStep({ email, onVerified, onResend, onChangeEmail }: OtpC
       <Button
         type="submit"
         className="mt-4 w-full bg-forest text-white hover:bg-forest-dark"
-        disabled={verifying || code.length < 6}
+        disabled={verifying || code.length < OTP_MIN_LENGTH}
       >
         {verifying ? (
           <>
