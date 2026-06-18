@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { summarizeItem } from "@/lib/packing/summarize";
 import type { PackingItem } from "@/lib/schemas/packing";
 import { Check, Minus, Plus, Trash2, X } from "lucide-react";
+import { useState } from "react";
 
 interface PackingItemRowProps {
   item: PackingItem;
@@ -12,7 +13,58 @@ interface PackingItemRowProps {
   onClaim: (itemId: string, quantity: number) => void;
   onUnclaim: (itemId: string) => void;
   onToggleBrought: (claimId: string, brought: boolean) => void;
+  onSetNote: (claimId: string, note: string | null) => void;
   onDelete: (itemId: string) => void;
+}
+
+/**
+ * Inline editor for the current user's "what I'm bringing" note.
+ * Mount with `key={claimId}` so an unclaim + reclaim re-seeds the draft.
+ */
+function ClaimNoteEditor({
+  claimId,
+  note,
+  onSetNote,
+}: {
+  claimId: string;
+  note: string | null;
+  onSetNote: (claimId: string, note: string | null) => void;
+}) {
+  const [draft, setDraft] = useState(note ?? "");
+  const dirty = draft.trim() !== (note ?? "");
+
+  const commit = () => {
+    if (!dirty) return;
+    onSetNote(claimId, draft.trim() || null);
+  };
+
+  return (
+    <div className="mt-1 flex items-center gap-1.5">
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          }
+        }}
+        maxLength={140}
+        placeholder="What are you bringing? (optional)"
+        aria-label="What are you bringing?"
+        className="min-w-0 flex-1 rounded-input border border-subtle bg-page px-2 py-1 text-xs text-ink placeholder:text-ink-light/60 focus:border-forest focus:outline-none"
+      />
+      {dirty && (
+        <button
+          type="button"
+          onClick={commit}
+          className="shrink-0 rounded-button bg-forest px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-wider text-white transition-colors hover:bg-forest-dark"
+        >
+          Save
+        </button>
+      )}
+    </div>
+  );
 }
 
 export function PackingItemRow({
@@ -22,14 +74,18 @@ export function PackingItemRow({
   onClaim,
   onUnclaim,
   onToggleBrought,
+  onSetNote,
   onDelete,
 }: PackingItemRowProps) {
   const s = summarizeItem(item);
   const myClaim = item.claims.find((c) => c.user_id === currentUserId);
 
+  const overClaimed = s.needed != null ? s.claimed - s.needed : 0;
   const progressLabel =
     s.needed != null
-      ? `${s.packed} of ${s.needed} packed${s.surplus > 0 ? ` · +${s.surplus}` : ""}`
+      ? `${s.claimed} of ${s.needed} claimed` +
+        (overClaimed > 0 ? ` · +${overClaimed}` : "") +
+        (s.packed > 0 ? ` · ${s.packed} packed` : "")
       : s.contributors.length > 0
         ? `${s.contributors.length} bringing it`
         : "Not claimed yet";
@@ -62,11 +118,27 @@ export function PackingItemRow({
       {s.contributors.length > 0 && (
         <ul className="mt-3 space-y-1.5">
           {s.contributors.map((c) => (
-            <li key={c.userId} className="flex items-center gap-2 text-sm">
-              <span className="flex-1 text-ink">
-                {c.name}
-                {s.needed != null && c.quantity > 1 ? ` × ${c.quantity}` : ""}
-              </span>
+            <li key={c.userId} className="flex items-start gap-2 text-sm">
+              <div className="min-w-0 flex-1">
+                <span className="text-ink">
+                  {c.name}
+                  {s.needed != null && c.quantity > 1 ? ` × ${c.quantity}` : ""}
+                </span>
+                {c.userId === currentUserId && myClaim ? (
+                  <ClaimNoteEditor
+                    key={myClaim.id}
+                    claimId={myClaim.id}
+                    note={myClaim.note}
+                    onSetNote={onSetNote}
+                  />
+                ) : (
+                  c.note && (
+                    <p className="mt-0.5 break-words text-xs italic text-ink-light">
+                      {c.note}
+                    </p>
+                  )
+                )}
+              </div>
               {c.userId === currentUserId && myClaim ? (
                 <button
                   type="button"

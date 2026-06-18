@@ -13,6 +13,13 @@ export const claimItemSchema = z.object({
 });
 export type ClaimItemInput = z.infer<typeof claimItemSchema>;
 
+export const setClaimNoteSchema = z.object({
+  claim_id: z.string().uuid(),
+  // Empty string from the input is normalized to null (clears the note).
+  note: z.string().max(140).nullable(),
+});
+export type SetClaimNoteInput = z.infer<typeof setClaimNoteSchema>;
+
 // Shared shapes returned by getPacking and consumed by summarize + UI.
 export interface PackingClaim {
   id: string;
@@ -20,6 +27,7 @@ export interface PackingClaim {
   user_name: string;
   quantity: number;
   brought: boolean;
+  note: string | null;
 }
 
 export interface PackingItem {
