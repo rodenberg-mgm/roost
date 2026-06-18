@@ -30,8 +30,8 @@ describe("summarizeItem", () => {
       item({
         target_quantity: 3,
         claims: [
-          { id: "c1", user_id: "u1", user_name: "Alex", quantity: 2, brought: true },
-          { id: "c2", user_id: "u2", user_name: "Bo", quantity: 1, brought: false },
+          { id: "c1", user_id: "u1", user_name: "Alex", quantity: 2, brought: true, note: null },
+          { id: "c2", user_id: "u2", user_name: "Bo", quantity: 1, brought: false, note: null },
         ],
       })
     );
@@ -47,8 +47,8 @@ describe("summarizeItem", () => {
       item({
         target_quantity: 3,
         claims: [
-          { id: "c1", user_id: "u1", user_name: "Alex", quantity: 3, brought: true },
-          { id: "c2", user_id: "u2", user_name: "Bo", quantity: 2, brought: true },
+          { id: "c1", user_id: "u1", user_name: "Alex", quantity: 3, brought: true, note: null },
+          { id: "c2", user_id: "u2", user_name: "Bo", quantity: 2, brought: true, note: null },
         ],
       })
     );
@@ -61,7 +61,9 @@ describe("summarizeItem", () => {
     const s = summarizeItem(
       item({
         target_quantity: null,
-        claims: [{ id: "c1", user_id: "u1", user_name: "Alex", quantity: 1, brought: true }],
+        claims: [
+          { id: "c1", user_id: "u1", user_name: "Alex", quantity: 1, brought: true, note: null },
+        ],
       })
     );
     expect(s.surplus).toBe(0);
@@ -69,15 +71,24 @@ describe("summarizeItem", () => {
     expect(s.contributors).toHaveLength(1);
   });
 
-  it("maps contributors preserving names, quantities, brought", () => {
+  it("maps contributors preserving names, quantities, brought, note", () => {
     const s = summarizeItem(
       item({
         target_quantity: 2,
-        claims: [{ id: "c1", user_id: "u1", user_name: "Alex", quantity: 2, brought: false }],
+        claims: [
+          {
+            id: "c1",
+            user_id: "u1",
+            user_name: "Alex",
+            quantity: 2,
+            brought: false,
+            note: "bringing Catan",
+          },
+        ],
       })
     );
     expect(s.contributors).toEqual([
-      { userId: "u1", name: "Alex", quantity: 2, brought: false },
+      { userId: "u1", name: "Alex", quantity: 2, brought: false, note: "bringing Catan" },
     ]);
   });
 });

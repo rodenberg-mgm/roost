@@ -10,6 +10,7 @@ import {
   deletePackingItem,
   getPacking,
   setBrought,
+  setClaimNote,
   unclaimItem,
 } from "@/lib/actions/packing";
 import type { PackingItem } from "@/lib/schemas/packing";
@@ -66,6 +67,11 @@ export function PackingList({
   const brought = useMutation({
     mutationFn: (v: { claimId: string; brought: boolean }) =>
       setBrought({ claim_id: v.claimId, brought: v.brought }),
+    onSettled: refetch,
+  });
+  const note = useMutation({
+    mutationFn: (v: { claimId: string; note: string | null }) =>
+      setClaimNote({ claim_id: v.claimId, note: v.note }),
     onSettled: refetch,
   });
   const remove = useMutation({
@@ -185,6 +191,7 @@ export function PackingList({
               onClaim={(itemId, quantity) => claim.mutate({ itemId, quantity })}
               onUnclaim={(itemId) => unclaim.mutate(itemId)}
               onToggleBrought={(claimId, b) => brought.mutate({ claimId, brought: b })}
+              onSetNote={(claimId, n) => note.mutate({ claimId, note: n })}
               onDelete={(itemId) => remove.mutate(itemId)}
             />
           ))}

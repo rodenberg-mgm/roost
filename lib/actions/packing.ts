@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   addPackingItemSchema,
   claimItemSchema,
+  setClaimNoteSchema,
   type PackingItem,
 } from "@/lib/schemas/packing";
 
@@ -14,7 +15,7 @@ export async function getPacking(tripId: string): Promise<PackingItem[]> {
   const { data, error } = await supabase
     .from("packing_items")
     .select(
-      "id, title, target_quantity, created_by_user_id, sort_order, claims:packing_claims(id, user_id, quantity, brought, users:user_id(display_name))"
+      "id, title, target_quantity, created_by_user_id, sort_order, claims:packing_claims(id, user_id, quantity, brought, note, users:user_id(display_name))"
     )
     .eq("trip_id", tripId)
     .order("sort_order", { ascending: true })
@@ -36,6 +37,7 @@ export async function getPacking(tripId: string): Promise<PackingItem[]> {
         user_name: u?.display_name ?? "Someone",
         quantity: c.quantity,
         brought: c.brought,
+        note: c.note ?? null,
       };
     }),
   }));
@@ -142,6 +144,31 @@ export async function setBrought(input: { claim_id: string; brought: boolean }) 
     .from("packing_claims")
     .update({ brought: input.brought })
     .eq("id", input.claim_id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  return { data: { ok: true } };
+}
+
+/**
+ * Set or clear the note on the caller's claim ("bringing Catan + Codenames").
+ * Kept separate from claimItem so editing a note never resets `brought`.
+ */
+export async function setClaimNote(input: { claim_id: string; note: string | null }) {
+  const parsed = setClaimNoteSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid note" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const trimmed = parsed.data.note?.trim();
+  const { error } = await supabase
+    .from("packing_claims")
+    .update({ note: trimmed ? trimmed : null })
+    .eq("id", parsed.data.claim_id)
     .eq("user_id", user.id);
 
   if (error) return { error: error.message };

@@ -6,7 +6,13 @@ export interface ItemSummary {
   packed: number;
   surplus: number;
   fullyPacked: boolean;
-  contributors: { userId: string; name: string; quantity: number; brought: boolean }[];
+  contributors: {
+    userId: string;
+    name: string;
+    quantity: number;
+    brought: boolean;
+    note: string | null;
+  }[];
 }
 
 export function summarizeItem(item: PackingItem): ItemSummary {
@@ -29,6 +35,7 @@ export function summarizeItem(item: PackingItem): ItemSummary {
       name: c.user_name,
       quantity: c.quantity,
       brought: c.brought,
+      note: c.note,
     })),
   };
 }
