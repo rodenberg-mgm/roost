@@ -12,6 +12,8 @@ import {
   leaveCook,
   updateMealSlot,
 } from "@/lib/actions/meals";
+import { getMealReservations } from "@/lib/actions/meal-reservations";
+import { addTask } from "@/lib/actions/game-plan";
 import { groupMealSlots } from "@/lib/meals/group";
 import { MEAL_TYPES, type MealSlot, type MealType } from "@/lib/schemas/meals";
 import { useTripChannel } from "@/lib/realtime/use-trip-channel";
@@ -20,7 +22,7 @@ import { CalendarOff, Plus, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 
-const MEAL_TABLES = ["meal_slots", "meal_cooks"];
+const MEAL_TABLES = ["meal_slots", "meal_cooks", "game_plan_tasks"];
 const MEAL_LABELS: Record<MealType, string> = {
   breakfast: "Breakfast",
   lunch: "Lunch",
@@ -54,8 +56,16 @@ export function MealsList({
     initialDataUpdatedAt: 0,
   });
 
+  const { data: reservations = {} } = useQuery({
+    queryKey: ["meal-reservations", tripId],
+    queryFn: () => getMealReservations(tripId),
+    initialData: {},
+    initialDataUpdatedAt: 0,
+  });
+
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["meals", tripId] });
+    queryClient.invalidateQueries({ queryKey: ["meal-reservations", tripId] });
   }, [queryClient, tripId]);
   useTripChannel(tripId, MEAL_TABLES, invalidate);
 
@@ -77,6 +87,22 @@ export function MealsList({
     onSettled: refetch,
   });
   const remove = useMutation({ mutationFn: (slotId: string) => deleteMealSlot(slotId), onSettled: refetch });
+
+  const addReservation = useMutation({
+    mutationFn: (slot: MealSlot) => {
+      const label =
+        slot.title?.trim() ||
+        `${MEAL_LABELS[slot.meal_type]} out`;
+      return addTask({
+        trip_id: tripId,
+        title: `Reserve a table — ${label}`,
+        source_kind: "meal",
+        source_id: slot.id,
+      });
+    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ["meal-reservations", tripId] }),
+  });
 
   const datesTBD = !startsOn || !endsOn;
 
@@ -304,6 +330,9 @@ export function MealsList({
                     slot={slot}
                     currentUserId={currentUserId}
                     isHost={isHost}
+                    tripId={tripId}
+                    reservation={reservations[slot.id]}
+                    onAddReservation={(s) => addReservation.mutate(s)}
                     onJoin={(slotId) => join.mutate(slotId)}
                     onLeave={(slotId) => leave.mutate(slotId)}
                     onSaveDetails={async (slotId, fields) => {

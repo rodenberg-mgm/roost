@@ -5,6 +5,7 @@ import {
   UtensilsCrossed,
   Image as ImageIcon,
   BookOpen,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -29,6 +30,7 @@ export function FeatureTiles({ tripId }: { tripId: string }) {
     { label: "Guests", icon: Users, href: `/trips/${tripId}#guests` },
     { label: "Packing", icon: Package, href: `/trips/${tripId}/packing` },
     { label: "Meals", icon: UtensilsCrossed, href: `/trips/${tripId}/meals` },
+    { label: "Game Plan", icon: ListChecks, href: `/trips/${tripId}/game-plan` },
     { label: "Photos", icon: ImageIcon, href: `/trips/${tripId}/photos` },
     { label: "Guestbook", icon: BookOpen, soon: true },
   ];
