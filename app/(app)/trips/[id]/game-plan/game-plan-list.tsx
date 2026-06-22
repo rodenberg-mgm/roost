@@ -112,7 +112,7 @@ export function GamePlanList({
 
   // Single "today" for all rows; local date in YYYY-MM-DD.
   const today = new Date().toLocaleDateString("en-CA");
-  const ordered = sortGamePlan(tasks, today);
+  const ordered = sortGamePlan(tasks);
 
   return (
     <div className="space-y-4">

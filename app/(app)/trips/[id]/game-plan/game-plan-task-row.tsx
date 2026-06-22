@@ -124,7 +124,11 @@ export function GamePlanTaskRow({
           {canManage && !editing && (
             <button
               type="button"
-              onClick={() => setEditing(true)}
+              onClick={() => {
+                setNote(task.note ?? "");
+                setDueInput(task.due_date ?? "");
+                setEditing(true);
+              }}
               title="Edit note & due date"
               aria-label="Edit note and due date"
               className="flex h-8 w-8 items-center justify-center rounded-button text-ink-light transition-colors hover:bg-sand/50 hover:text-forest"

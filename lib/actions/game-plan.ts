@@ -149,16 +149,20 @@ export async function releaseTask(taskId: string) {
     .single();
   if (!task) return { error: "To-do not found" };
 
-  const allowed =
-    task.owner_user_id === user.id ||
-    (await isHostOfTrip(supabase, task.trip_id, user.id));
-  if (!allowed) return { error: "Only the owner or host can release this" };
+  const isOwner = task.owner_user_id === user.id;
+  const isHost = await isHostOfTrip(supabase, task.trip_id, user.id);
+  if (!isOwner && !isHost) return { error: "Only the owner or host can release this" };
 
   const service = await createServiceClient();
-  const { error } = await service
+  let query = service
     .from("game_plan_tasks")
     .update({ owner_user_id: null })
     .eq("id", taskId);
+  // A non-host releases only while still the owner — guards against releasing a
+  // task that was re-claimed between our read and this write. Hosts may release
+  // regardless of the current owner.
+  if (!isHost) query = query.eq("owner_user_id", user.id);
+  const { error } = await query;
   if (error) return { error: error.message };
   return { data: { ok: true } };
 }

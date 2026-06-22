@@ -54,11 +54,9 @@ describe("dueStatus", () => {
 });
 
 describe("sortGamePlan", () => {
-  const today = "2026-06-22";
   it("done tasks sink below not-done", () => {
     const out = sortGamePlan(
-      [task({ id: "done", done: true }), task({ id: "open" })],
-      today
+      [task({ id: "done", done: true }), task({ id: "open" })]
     );
     expect(out.map((t) => t.id)).toEqual(["open", "done"]);
   });
@@ -68,8 +66,7 @@ describe("sortGamePlan", () => {
         task({ id: "nodue" }),
         task({ id: "late", due_date: "2026-07-01" }),
         task({ id: "early", due_date: "2026-06-23" }),
-      ],
-      today
+      ]
     );
     expect(out.map((t) => t.id)).toEqual(["early", "late", "nodue"]);
   });
@@ -78,8 +75,7 @@ describe("sortGamePlan", () => {
       [
         task({ id: "b", due_date: "2026-06-23", sort_order: 2 }),
         task({ id: "a", due_date: "2026-06-23", sort_order: 1 }),
-      ],
-      today
+      ]
     );
     expect(out.map((t) => t.id)).toEqual(["a", "b"]);
   });

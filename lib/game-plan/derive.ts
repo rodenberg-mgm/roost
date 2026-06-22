@@ -29,7 +29,7 @@ export function dueStatus(
  * Sort for display: not-done before done; within not-done, soonest due first
  * with no-due last; ties broken by sort_order then created order (stable input).
  */
-export function sortGamePlan(tasks: GamePlanTask[], _today: string): GamePlanTask[] {
+export function sortGamePlan(tasks: GamePlanTask[]): GamePlanTask[] {
   return [...tasks].sort((a, b) => {
     if (a.done !== b.done) return a.done ? 1 : -1;
     const ad = a.due_date;
