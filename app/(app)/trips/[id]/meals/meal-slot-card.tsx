@@ -3,8 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { MealReservation } from "@/lib/actions/meal-reservations";
 import type { MealSlot, MealType } from "@/lib/schemas/meals";
-import { ChefHat, Clock, Pencil, Trash2, UtensilsCrossed, X } from "lucide-react";
+import { CalendarPlus, Check, ChefHat, Clock, Pencil, Trash2, UtensilsCrossed, X } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 const MEAL_LABELS: Record<MealType, string> = {
@@ -18,6 +20,9 @@ interface MealSlotCardProps {
   slot: MealSlot;
   currentUserId: string;
   isHost: boolean;
+  tripId: string;
+  reservation?: MealReservation;
+  onAddReservation?: (slot: MealSlot) => void;
   onJoin: (slotId: string) => void;
   onLeave: (slotId: string) => void;
   onSaveDetails: (
@@ -37,6 +42,9 @@ export function MealSlotCard({
   slot,
   currentUserId,
   isHost,
+  tripId,
+  reservation,
+  onAddReservation,
   onJoin,
   onLeave,
   onSaveDetails,
@@ -154,6 +162,37 @@ export function MealSlotCard({
           {slot.notes && (
             <p className="whitespace-pre-wrap text-xs text-ink-light">{slot.notes}</p>
           )}
+          {/* Reservation status (reads Game Plan) */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {reservation ? (
+              <Link
+                href={`/trips/${tripId}/game-plan`}
+                className="inline-flex items-center gap-1 rounded-badge bg-sand/50 px-2 py-0.5 font-mono text-[0.55rem] uppercase tracking-wider text-ink-light transition-colors hover:text-forest"
+              >
+                {reservation.state === "done" ? (
+                  <>
+                    <Check className="h-2.5 w-2.5 text-forest" />
+                    Reserved
+                  </>
+                ) : reservation.state === "claimed" ? (
+                  <>Reservation: {reservation.ownerName ?? "claimed"}</>
+                ) : (
+                  <>Reservation: needed</>
+                )}
+              </Link>
+            ) : (
+              onAddReservation && (
+                <button
+                  type="button"
+                  onClick={() => onAddReservation(slot)}
+                  className="inline-flex min-h-11 items-center gap-1 rounded-button border border-subtle px-3 py-1 text-xs text-ink-light transition-colors hover:text-forest"
+                >
+                  <CalendarPlus className="h-3.5 w-3.5" />
+                  Add reservation to Game Plan
+                </button>
+              )
+            )}
+          </div>
         </div>
       )}
 
