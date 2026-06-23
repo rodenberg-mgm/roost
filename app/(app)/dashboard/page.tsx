@@ -109,14 +109,14 @@ export default async function DashboardPage() {
   const restMemberships = sorted.slice(1);
 
   return (
-    <div className="-mx-4 -mt-6">
+    <div className="-mx-4 -mt-6 sm:-mx-6">
       <Suspense>
         <SavedToast />
       </Suspense>
 
       {/* Kraft header */}
-      <div className="kraft-bg px-4 pb-6 pt-6">
-        <div className="mx-auto flex max-w-lg items-center justify-between">
+      <div className="kraft-bg px-4 pb-6 pt-6 sm:px-6">
+        <div className="mx-auto flex max-w-lg items-center justify-between sm:max-w-2xl md:max-w-3xl">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Roost" width={40} height={40} className="h-9 w-9" />
             <div>
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Content */}
-      <div className="mx-auto max-w-lg px-4 pt-5">
+      <div className="mx-auto max-w-lg px-4 pt-5 sm:max-w-2xl sm:px-6 md:max-w-3xl">
         {activeTrips.length === 0 ? (
           <div className="topo-bg rounded-card border">
             <EmptyState
@@ -175,22 +175,24 @@ export default async function DashboardPage() {
             {restMemberships.length > 0 && (
               <div className="space-y-3">
                 <StampBadge variant="kraft">All Trips</StampBadge>
-                {restMemberships.map((m) => {
-                  const trip = (Array.isArray(m.trips) ? m.trips[0] : m.trips) as TripRow;
-                  return (
-                    <TripCard
-                      key={trip.id}
-                      id={trip.id}
-                      name={trip.name}
-                      startsOn={trip.starts_on}
-                      endsOn={trip.ends_on}
-                      city={trip.city}
-                      region={trip.region}
-                      memberCount={memberCounts[trip.id] || 1}
-                      role={m.role}
-                    />
-                  );
-                })}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {restMemberships.map((m) => {
+                    const trip = (Array.isArray(m.trips) ? m.trips[0] : m.trips) as TripRow;
+                    return (
+                      <TripCard
+                        key={trip.id}
+                        id={trip.id}
+                        name={trip.name}
+                        startsOn={trip.starts_on}
+                        endsOn={trip.ends_on}
+                        city={trip.city}
+                        region={trip.region}
+                        memberCount={memberCounts[trip.id] || 1}
+                        role={m.role}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

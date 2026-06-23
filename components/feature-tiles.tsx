@@ -36,7 +36,7 @@ export function FeatureTiles({ tripId }: { tripId: string }) {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-2.5">
+    <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
       {tiles.map(({ label, icon: Icon, href, soon }) => {
         const inner = (
           <>

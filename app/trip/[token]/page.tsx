@@ -110,7 +110,7 @@ export default async function TripViewPage({ params }: TripViewProps) {
 
   return (
     <main className="min-h-screen bg-page pb-20">
-      <div className="mx-auto max-w-lg px-4 pt-6">
+      <div className="mx-auto w-full max-w-lg px-4 pt-6 sm:max-w-2xl sm:px-6">
         <header className="mb-6">
           <div className="mb-2">
             <StampBadge variant="forest">You&apos;re Invited</StampBadge>

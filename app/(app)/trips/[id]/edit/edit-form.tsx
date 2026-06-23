@@ -98,7 +98,7 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
           <Input id="name" name="name" defaultValue={initialData.name} required />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="starts_on">Start date</Label>
             <Input id="starts_on" name="starts_on" type="date" defaultValue={initialData.starts_on || ""} />
@@ -129,7 +129,7 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="city">City</Label>
             <Input
@@ -153,7 +153,7 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="postal_code">Postal code</Label>
             <Input
@@ -192,7 +192,7 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
       <div className="space-y-4">
         <h3 className="font-semibold text-ink">Sensitive info</h3>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="wifi_ssid">Wifi name</Label>
             <Input id="wifi_ssid" name="wifi_ssid" defaultValue={sensitiveData?.wifi_ssid || ""} />
@@ -203,7 +203,7 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="door_code">Door code</Label>
             <Input id="door_code" name="door_code" defaultValue={sensitiveData?.door_code || ""} />
@@ -220,7 +220,7 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-brick">{error}</p>}
 
       <div className="flex gap-3">
         <Button type="button" variant="outline" className="flex-1" onClick={() => router.back()}>

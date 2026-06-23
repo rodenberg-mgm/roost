@@ -216,9 +216,10 @@ export default async function TripPage({ params }: TripPageProps) {
         </div>
       )}
 
-      {/* Welcome banner */}
-      <div className="relative mb-5 overflow-hidden rounded-card border bg-card shadow-card">
-        <CabinScene className="mx-auto h-44 w-full" />
+      {/* Welcome banner — cabin vignette matted on kraft texture so the art
+          fills the card at any width instead of letterboxing on a blank panel */}
+      <div className="kraft-bg relative mb-5 overflow-hidden rounded-card border shadow-card">
+        <CabinScene className="mx-auto block h-44 w-auto max-w-full py-4 sm:h-56" />
         <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 pb-3">
           <StampBadge variant="forest">Welcome</StampBadge>
           <StampBadge variant="kraft">Relax</StampBadge>
@@ -231,8 +232,9 @@ export default async function TripPage({ params }: TripPageProps) {
         <FeatureTiles tripId={id} />
       </div>
 
-      {/* Content sections */}
-      <div className="space-y-3">
+      {/* Content sections — single column on mobile, 2-up masonry on desktop so
+          the short info cards fill the wider container instead of stacking thin */}
+      <div className="columns-1 gap-3 md:columns-2 [&>*]:mb-3 [&>*]:break-inside-avoid">
         {/* Dates */}
         <TripInfoSection id="trip-info" icon={Calendar} title="Dates">
           <p className="text-sm text-ink">{dateDisplay}</p>
@@ -381,16 +383,17 @@ export default async function TripPage({ params }: TripPageProps) {
           hasAccess={hasSensitiveAccess}
         />
 
-        {/* Share button */}
-        {canEdit && (
-          <Button asChild size="lg" className="w-full text-base">
-            <Link href={`/trips/${id}/invite`}>
-              <Share2 className="h-4 w-4" />
-              Share with Guests
-            </Link>
-          </Button>
-        )}
       </div>
+
+      {/* Share button — full width below the 2-up sections */}
+      {canEdit && (
+        <Button asChild size="lg" className="mt-3 w-full text-base">
+          <Link href={`/trips/${id}/invite`}>
+            <Share2 className="h-4 w-4" />
+            Share with Guests
+          </Link>
+        </Button>
+      )}
     </div>
   );
 }

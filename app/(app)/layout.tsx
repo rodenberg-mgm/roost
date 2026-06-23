@@ -20,7 +20,9 @@ export default async function AppLayout({
   return (
     <Providers>
       <div className="min-h-screen bg-page pb-20">
-        <main className="mx-auto max-w-lg px-4 pt-6">{children}</main>
+        <main className="mx-auto w-full max-w-lg px-4 pt-6 sm:max-w-2xl sm:px-6 sm:pt-8 md:max-w-3xl">
+          {children}
+        </main>
         <BottomNav />
       </div>
     </Providers>
