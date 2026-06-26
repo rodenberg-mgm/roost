@@ -98,7 +98,6 @@ export async function updateTrip(tripId: string, input: {
   if (tripFields.region !== undefined) updateData.region = tripFields.region;
   if (tripFields.house_rules !== undefined) updateData.house_rules = tripFields.house_rules;
   if (tripFields.local_tips !== undefined) updateData.local_tips = tripFields.local_tips;
-  if (tripFields.stocked_items !== undefined) updateData.stocked_items = tripFields.stocked_items;
 
   if (Object.keys(updateData).length > 0) {
     const { error } = await supabase
@@ -135,6 +134,73 @@ export async function updateTrip(tripId: string, input: {
   redirect("/dashboard?saved=1");
 }
 
+/**
+ * Confirm the caller is the trip's PRIMARY host. Archive/delete are deliberately
+ * restricted to the owner, not co-hosts. (trips RLS already only lets the primary
+ * host update the row, but we check explicitly for a clean error.)
+ */
+async function requirePrimaryHost(tripId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" as const };
+
+  const { data: trip } = await supabase
+    .from("trips")
+    .select("host_user_id")
+    .eq("id", tripId)
+    .single();
+
+  if (!trip) return { error: "Trip not found" as const };
+  if (trip.host_user_id !== user.id) {
+    return { error: "Only the trip host can do this" as const };
+  }
+  return { supabase };
+}
+
+/** Hide a trip from the dashboard without deleting it. */
+export async function archiveTrip(tripId: string) {
+  const auth = await requirePrimaryHost(tripId);
+  if ("error" in auth) return { error: auth.error };
+
+  const { error } = await auth.supabase
+    .from("trips")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", tripId);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  return { data: { ok: true } };
+}
+
+/** Bring an archived trip back to the active dashboard. */
+export async function unarchiveTrip(tripId: string) {
+  const auth = await requirePrimaryHost(tripId);
+  if ("error" in auth) return { error: auth.error };
+
+  const { error } = await auth.supabase
+    .from("trips")
+    .update({ archived_at: null })
+    .eq("id", tripId);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  return { data: { ok: true } };
+}
+
+/** Soft-delete a trip (sets deleted_at). Recoverable only by an admin. */
+export async function deleteTrip(tripId: string) {
+  const auth = await requirePrimaryHost(tripId);
+  if ("error" in auth) return { error: auth.error };
+
+  const { error } = await auth.supabase
+    .from("trips")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", tripId);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  return { data: { ok: true } };
+}
+
 async function syncPropertyToTrip(
   supabase: Awaited<ReturnType<typeof createClient>>,
   tripId: string,
@@ -143,7 +209,7 @@ async function syncPropertyToTrip(
   // Read property (non-sensitive)
   const { data: property } = await supabase
     .from("properties")
-    .select("name, city, region, house_rules, local_tips, stocked_items")
+    .select("name, city, region, house_rules, local_tips")
     .eq("id", propertyId)
     .single();
 
@@ -164,7 +230,6 @@ async function syncPropertyToTrip(
       region: property.region,
       house_rules: property.house_rules,
       local_tips: property.local_tips,
-      stocked_items: property.stocked_items,
       property_synced_at: new Date().toISOString(),
       property_sync_overrides: {},
     })
@@ -184,5 +249,46 @@ async function syncPropertyToTrip(
         parking_notes: sensitive.parking_notes,
       })
       .eq("trip_id", tripId);
+  }
+
+  // Copy structured inventory + suggested-to-bring rows from the property
+  // template to the trip's editable copies. Image references are copied as-is
+  // (the inventory-images bucket is public, so the trip can reference the same
+  // object without a re-upload). On initial link the trip has no rows yet; this
+  // is the copy-on-link step, not a live join.
+  await copyPropertyRowsToTrip(supabase, tripId, propertyId);
+}
+
+/**
+ * Copy property-level inventory + suggested items into a trip's tables. Inserts
+ * fresh rows (initial link). Failures here are non-fatal to the link itself.
+ */
+async function copyPropertyRowsToTrip(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tripId: string,
+  propertyId: string,
+) {
+  const { data: inventory } = await supabase
+    .from("property_inventory_items")
+    .select("category, title, quantity, detail, image_path, sort_order")
+    .eq("property_id", propertyId)
+    .is("deleted_at", null);
+
+  if (inventory && inventory.length > 0) {
+    await supabase.from("trip_inventory_items").insert(
+      inventory.map((r) => ({ trip_id: tripId, ...r })),
+    );
+  }
+
+  const { data: suggested } = await supabase
+    .from("property_suggested_items")
+    .select("category, title, sort_order")
+    .eq("property_id", propertyId)
+    .is("deleted_at", null);
+
+  if (suggested && suggested.length > 0) {
+    await supabase.from("trip_suggested_items").insert(
+      suggested.map((r) => ({ trip_id: tripId, ...r })),
+    );
   }
 }

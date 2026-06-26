@@ -7,6 +7,40 @@ export interface StorageFile {
 
 const BUCKET = "trip-photos";
 
+// Inventory photos live in a PUBLIC bucket: they are non-sensitive and shown to
+// anonymous /trip/[token] viewers who have no session to mint signed URLs. Paths
+// are unguessable UUIDs. Write authority is enforced server-side before minting
+// the signed upload URL (see lib/actions/inventory.ts).
+const INVENTORY_BUCKET = "inventory-images";
+
+/** Mint a one-shot signed upload URL for an inventory photo key. */
+export async function createInventoryUploadUrl(
+  key: string
+): Promise<{ path: string; token: string }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage
+    .from(INVENTORY_BUCKET)
+    .createSignedUploadUrl(key);
+  if (error || !data) {
+    throw new Error(`Inventory upload URL failed: ${error?.message ?? "no data"}`);
+  }
+  return { path: data.path, token: data.token };
+}
+
+/** Public URL for a stored inventory photo (bucket is public). */
+export function inventoryPublicUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!base) return null;
+  return `${base}/storage/v1/object/public/${INVENTORY_BUCKET}/${path}`;
+}
+
+/** Delete an inventory photo object (best-effort cleanup). */
+export async function removeInventoryImage(path: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.storage.from(INVENTORY_BUCKET).remove([path]);
+}
+
 /**
  * Upload a file to storage.
  * All photo uploads MUST go through this interface — never call

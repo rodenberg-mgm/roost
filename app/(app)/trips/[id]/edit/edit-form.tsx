@@ -20,7 +20,6 @@ interface EditFormProps {
     region: string | null;
     house_rules: string[];
     local_tips: string[];
-    stocked_items: string[];
   };
   sensitiveData: {
     wifi_ssid: string | null;
@@ -69,7 +68,6 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
       region: region || undefined,
       house_rules: parseList(fd.get("house_rules")),
       local_tips: parseList(fd.get("local_tips")),
-      stocked_items: parseList(fd.get("stocked_items")),
       wifi_ssid: (fd.get("wifi_ssid") as string) || undefined,
       wifi_password: (fd.get("wifi_password") as string) || undefined,
       door_code: (fd.get("door_code") as string) || undefined,
@@ -180,12 +178,6 @@ export function EditForm({ tripId, initialData, sensitiveData }: EditFormProps) 
           <Label>Local tips</Label>
           <ListEditor name="local_tips" initialItems={initialData.local_tips}
             placeholder="Best coffee on the square" addLabel="Add a local tip" />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Stocked items</Label>
-          <ListEditor name="stocked_items" initialItems={initialData.stocked_items}
-            placeholder="Coffee" addLabel="Add a stocked item" />
         </div>
       </div>
 

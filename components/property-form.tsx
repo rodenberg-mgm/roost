@@ -65,7 +65,6 @@ export function PropertyForm({
       region: region || undefined,
       house_rules: parseList("house_rules"),
       local_tips: parseList("local_tips"),
-      stocked_items: parseList("stocked_items"),
       wifi_ssid: getInputValue("wifi_ssid") || undefined,
       wifi_password: getInputValue("wifi_password") || undefined,
       door_code: getInputValue("door_code") || undefined,
@@ -161,11 +160,12 @@ export function PropertyForm({
             placeholder="Best coffee: Blue Barn on the square" addLabel="Add a local tip" />
         </div>
 
-        <div className="space-y-2">
-          <Label>Stocked items</Label>
-          <ListEditor name="stocked_items" initialItems={initialValues?.stocked_items}
-            placeholder="Coffee" addLabel="Add a stocked item" />
-        </div>
+        {!isEdit && (
+          <p className="rounded-input bg-sand/30 px-3 py-2.5 text-xs text-ink-light">
+            Save the property first, then add what&apos;s already here (life jackets,
+            pantry staples) and a suggested-to-bring list on the next screen.
+          </p>
+        )}
       </div>
 
       {/* Sensitive info section */}

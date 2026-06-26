@@ -10,6 +10,7 @@ interface TripCardProps {
   region: string | null;
   memberCount: number;
   role: string;
+  archived?: boolean;
 }
 
 export function TripCard({
@@ -21,6 +22,7 @@ export function TripCard({
   region,
   memberCount,
   role,
+  archived,
 }: TripCardProps) {
   const formatDate = (date: string | null) => {
     if (!date) return null;
@@ -56,6 +58,11 @@ export function TripCard({
             <span className="shrink-0 rounded-badge bg-sand/60 px-2 py-0.5 font-mono text-[0.6rem] font-medium uppercase tracking-wider text-ink-light">
               {role === "host" ? "Host" : role === "co-host" ? "Co-host" : "Guest"}
             </span>
+            {archived && (
+              <span className="shrink-0 rounded-badge bg-ink/10 px-2 py-0.5 font-mono text-[0.6rem] font-medium uppercase tracking-wider text-ink-light">
+                Archived
+              </span>
+            )}
           </div>
           <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-ink-light">
             <span className="flex items-center gap-1.5">

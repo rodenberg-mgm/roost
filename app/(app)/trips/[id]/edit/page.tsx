@@ -1,4 +1,6 @@
 import { EditForm } from "./edit-form";
+import { InventoryManager } from "@/components/inventory-manager";
+import { getInventory, getSuggestions } from "@/lib/actions/inventory";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
 import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
@@ -21,7 +23,7 @@ export default async function EditTripPage({ params }: EditPageProps) {
 
   const { data: trip } = await supabase
     .from("trips")
-    .select("name, starts_on, ends_on, city, region, house_rules, local_tips, stocked_items")
+    .select("name, starts_on, ends_on, city, region, house_rules, local_tips")
     .eq("id", id)
     .single();
 
@@ -32,6 +34,11 @@ export default async function EditTripPage({ params }: EditPageProps) {
     .select("wifi_ssid, wifi_password, door_code, gate_code, address_line, postal_code, parking_notes")
     .eq("trip_id", id)
     .single();
+
+  const [inventory, suggestions] = await Promise.all([
+    getInventory("trip", id),
+    getSuggestions("trip", id),
+  ]);
 
   return (
     <div>
@@ -52,9 +59,17 @@ export default async function EditTripPage({ params }: EditPageProps) {
             ...trip,
             house_rules: (trip.house_rules as string[]) || [],
             local_tips: (trip.local_tips as string[]) || [],
-            stocked_items: (trip.stocked_items as string[]) || [],
           }}
           sensitiveData={sensitiveInfo}
+        />
+      </div>
+
+      <div className="mt-4 rounded-card border bg-card p-6 shadow-card">
+        <InventoryManager
+          scope="trip"
+          parentId={id}
+          initialInventory={inventory}
+          initialSuggestions={suggestions}
         />
       </div>
     </div>

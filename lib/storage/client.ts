@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 
-const BUCKET = "trip-photos";
+const PHOTO_BUCKET = "trip-photos";
+const INVENTORY_BUCKET = "inventory-images";
 
 /**
  * Upload a blob to Storage using a signed upload URL minted server-side
@@ -15,7 +16,21 @@ export async function uploadToSignedUrl(
 ): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.storage
-    .from(BUCKET)
+    .from(PHOTO_BUCKET)
+    .uploadToSignedUrl(path, token, blob, { contentType });
+  if (error) throw new Error(`Upload failed: ${error.message}`);
+}
+
+/** Upload an inventory photo blob to its signed URL (public bucket). */
+export async function uploadInventoryImage(
+  path: string,
+  token: string,
+  blob: Blob,
+  contentType: string
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.storage
+    .from(INVENTORY_BUCKET)
     .uploadToSignedUrl(path, token, blob, { contentType });
   if (error) throw new Error(`Upload failed: ${error.message}`);
 }
