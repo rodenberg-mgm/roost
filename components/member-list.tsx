@@ -28,6 +28,8 @@ export function MemberList({ tripId, members, currentUserId, currentUserRole }: 
   const [error, setError] = useState<string | null>(null);
 
   const actorIsPrimaryHost = members.some((m) => m.user_id === currentUserId && m.is_primary_host);
+  const actorIsOrganizer = currentUserRole === "host" || currentUserRole === "co-host";
+  const hasCoHost = members.some((m) => m.role === "co-host" && m.joined);
 
   useEffect(() => {
     if (openFor === null) return;
@@ -122,6 +124,19 @@ export function MemberList({ tripId, members, currentUserId, currentUserRole }: 
       })}
 
       {error && <p className="text-xs text-brick">{error}</p>}
+
+      {actorIsOrganizer && (
+        <li className="!mt-3 flex gap-2 rounded-input bg-sand/30 px-3 py-2.5 text-xs leading-relaxed text-ink-light">
+          <UserPlus className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+          <span>
+            {hasCoHost ? (
+              <>Co-organizers share the load — they can edit trip info, invite people, and see wifi &amp; codes. Manage anyone&apos;s role from the <span className="font-semibold text-ink">⋮</span> menu.</>
+            ) : (
+              <>Running this with someone? Make them a <span className="font-semibold text-ink">co-organizer</span> from the <span className="font-semibold text-ink">⋮</span> menu (or invite them as one below) so they can edit info, invite guests, and see wifi &amp; codes.</>
+            )}
+          </span>
+        </li>
+      )}
 
       {confirm && (
         <ConfirmOverlay

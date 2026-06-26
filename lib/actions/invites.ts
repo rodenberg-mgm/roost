@@ -156,6 +156,7 @@ export async function sendInvites(input: SendInvitesInput) {
       .insert({
         trip_id: parsed.data.trip_id,
         email,
+        role: parsed.data.role,
       })
       .select("id, token")
       .single();

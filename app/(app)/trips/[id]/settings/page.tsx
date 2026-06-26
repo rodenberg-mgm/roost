@@ -21,7 +21,7 @@ export default async function TripSettingsPage({ params }: SettingsPageProps) {
   const serviceClient = await createServiceClient();
   const { data: trip } = await serviceClient
     .from("trips")
-    .select("require_pin_to_view, pin_hash")
+    .select("require_pin_to_view, pin_hash, archived_at")
     .eq("id", id)
     .single();
 
@@ -42,6 +42,8 @@ export default async function TripSettingsPage({ params }: SettingsPageProps) {
           tripId={id}
           requirePin={trip?.require_pin_to_view || false}
           hasPin={!!trip?.pin_hash}
+          archived={!!trip?.archived_at}
+          isPrimaryHost={membership.role === "host"}
         />
       </div>
     </div>

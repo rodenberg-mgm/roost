@@ -1,4 +1,4 @@
-import { PackingList } from "./packing-list";
+import { PackingTabs } from "./packing-tabs";
 import { getPacking } from "@/lib/actions/packing";
 import { requireTripMembership, isHostRole } from "@/lib/trip-access/check-membership";
 import { ArrowLeft } from "lucide-react";
@@ -25,15 +25,15 @@ export default async function PackingPage({ params }: PackingPageProps) {
         </Link>
         <h1 className="font-display text-2xl font-bold uppercase text-ink">Packing</h1>
         <p className="mt-1 text-sm text-ink-light">
-          Claim what you&apos;ll bring. Updates appear live for everyone.
+          Split up shared supplies, and keep your own private packing list.
         </p>
       </header>
 
-      <PackingList
+      <PackingTabs
         tripId={id}
-        initialItems={initialItems}
         currentUserId={membership.userId}
         isHost={isHostRole(membership.role)}
+        initialPacking={initialItems}
       />
     </div>
   );

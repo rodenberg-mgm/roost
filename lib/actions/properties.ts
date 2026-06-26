@@ -27,7 +27,6 @@ export async function createProperty(input: CreatePropertyInput) {
       region: propertyFields.region || null,
       house_rules: propertyFields.house_rules ?? [],
       local_tips: propertyFields.local_tips ?? [],
-      stocked_items: propertyFields.stocked_items ?? [],
     })
     .select("id")
     .single();
@@ -128,7 +127,6 @@ export async function updateProperty(
     region: propertyFields.region || null,
     house_rules: propertyFields.house_rules ?? [],
     local_tips: propertyFields.local_tips ?? [],
-    stocked_items: propertyFields.stocked_items ?? [],
   };
 
   const { data: updated, error: propError } = await supabase

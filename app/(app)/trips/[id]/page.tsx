@@ -4,6 +4,9 @@ import { StampBadge } from "@/components/stamp-badge";
 import { FeatureTiles } from "@/components/feature-tiles";
 import { PropertyLinkChip } from "@/components/property-link-chip";
 import { TripWeather } from "@/components/trip-weather";
+import { InventoryBrowse } from "@/components/inventory-browse";
+import { SuggestedAddList } from "@/components/suggested-add-list";
+import { getInventory, getSuggestions } from "@/lib/actions/inventory";
 import { getTripWeather } from "@/lib/weather/open-meteo";
 import { CabinScene } from "@/components/illustrations";
 import { Button } from "@/components/ui/button";
@@ -18,8 +21,10 @@ import {
   ScrollText,
   Lightbulb,
   Package,
+  ClipboardList,
   Pencil,
   Send,
+  Settings,
   Share2,
   Plus,
 } from "lucide-react";
@@ -68,6 +73,12 @@ export default async function TripPage({ params }: TripPageProps) {
     .single();
 
   if (!trip) notFound();
+
+  // Structured inventory + suggested-to-bring (replaces the old stocked_items array)
+  const [inventory, suggestions] = await Promise.all([
+    getInventory("trip", id),
+    getSuggestions("trip", id),
+  ]);
 
   // Fetch members with user info via foreign key join
   const { data: members } = await supabase
@@ -199,6 +210,13 @@ export default async function TripPage({ params }: TripPageProps) {
                 className="flex h-9 w-9 items-center justify-center rounded-button text-ink-light transition-colors hover:bg-sand/50 hover:text-forest"
               >
                 <Send className="h-4 w-4" />
+              </Link>
+              <Link
+                href={`/trips/${id}/settings`}
+                aria-label="Trip settings"
+                className="flex h-9 w-9 items-center justify-center rounded-button text-ink-light transition-colors hover:bg-sand/50 hover:text-forest"
+              >
+                <Settings className="h-4 w-4" />
               </Link>
             </div>
           )}
@@ -346,28 +364,32 @@ export default async function TripPage({ params }: TripPageProps) {
           </TripInfoSection>
         )}
 
-        {/* Stocked Items */}
-        {((trip.stocked_items as string[])?.length > 0 || canEdit) && (
+        {/* What's already here (structured inventory) */}
+        {(inventory.length > 0 || canEdit) && (
           <TripInfoSection
             icon={Package}
-            title="Stocked Items"
-            action={
-              (trip.stocked_items as string[])?.length > 0 && canEdit ? (
-                <EditLink href={`/trips/${id}/edit`} />
-              ) : undefined
-            }
+            title="What's already here"
+            action={inventory.length > 0 && canEdit ? <EditLink href={`/trips/${id}/edit`} /> : undefined}
           >
-            {(trip.stocked_items as string[])?.length > 0 ? (
-              <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                {(trip.stocked_items as string[]).map((item: string, i: number) => (
-                  <li key={i} className="flex items-center gap-1.5 text-sm text-ink">
-                    <span className="h-1 w-1 shrink-0 rounded-full bg-forest/40" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+            {inventory.length > 0 ? (
+              <InventoryBrowse items={inventory} />
             ) : (
-              <AddPrompt href={`/trips/${id}/edit`} label="Add stocked items" />
+              <AddPrompt href={`/trips/${id}/edit`} label="Add what's already at the place" />
+            )}
+          </TripInfoSection>
+        )}
+
+        {/* Suggested to bring */}
+        {(suggestions.length > 0 || canEdit) && (
+          <TripInfoSection
+            icon={ClipboardList}
+            title="Suggested to bring"
+            action={suggestions.length > 0 && canEdit ? <EditLink href={`/trips/${id}/edit`} /> : undefined}
+          >
+            {suggestions.length > 0 ? (
+              <SuggestedAddList tripId={id} items={suggestions} />
+            ) : (
+              <AddPrompt href={`/trips/${id}/edit`} label="Suggest things to bring" />
             )}
           </TripInfoSection>
         )}

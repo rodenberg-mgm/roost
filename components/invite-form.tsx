@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendInvites } from "@/lib/actions/invites";
+import type { InviteRole } from "@/lib/schemas/invite";
 import { Check, Loader2, Plus, X } from "lucide-react";
 import { useState } from "react";
 
@@ -13,6 +14,7 @@ interface InviteFormProps {
 
 export function InviteForm({ tripId }: InviteFormProps) {
   const [emails, setEmails] = useState<string[]>([""]);
+  const [role, setRole] = useState<InviteRole>("guest");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<{ email: string; success: boolean; error?: string }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export function InviteForm({ tripId }: InviteFormProps) {
     const result = await sendInvites({
       trip_id: tripId,
       emails: validEmails,
+      role,
     });
 
     setLoading(false);
@@ -102,6 +105,24 @@ export function InviteForm({ tripId }: InviteFormProps) {
         Add another
       </button>
 
+      <div className="space-y-2">
+        <Label>Invite as</Label>
+        <div className="grid grid-cols-2 gap-2">
+          <RoleOption
+            selected={role === "guest"}
+            onClick={() => setRole("guest")}
+            title="Guest"
+            description="Joins the trip, can claim and pitch in"
+          />
+          <RoleOption
+            selected={role === "co-host"}
+            onClick={() => setRole("co-host")}
+            title="Co-organizer"
+            description="Helps you run it — edit info, invite, see codes"
+          />
+        </div>
+      </div>
+
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {results && (
@@ -135,5 +156,33 @@ export function InviteForm({ tripId }: InviteFormProps) {
         )}
       </Button>
     </form>
+  );
+}
+
+function RoleOption({
+  selected,
+  onClick,
+  title,
+  description,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  title: string;
+  description: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`rounded-input border p-3 text-left transition-colors ${
+        selected
+          ? "border-forest bg-forest/5"
+          : "border-subtle bg-card hover:bg-sand/30"
+      }`}
+    >
+      <span className="block text-sm font-semibold text-ink">{title}</span>
+      <span className="mt-0.5 block text-xs text-ink-light">{description}</span>
+    </button>
   );
 }

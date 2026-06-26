@@ -1,5 +1,7 @@
 import { EditPropertyContent } from "./edit-property-content";
+import { InventoryManager } from "@/components/inventory-manager";
 import { getProperty } from "@/lib/actions/properties";
+import { getInventory, getSuggestions } from "@/lib/actions/inventory";
 import type { CreatePropertyInput } from "@/lib/schemas/property";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -20,13 +22,17 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
 
   const { property, sensitive } = result;
 
+  const [inventory, suggestions] = await Promise.all([
+    getInventory("property", id),
+    getSuggestions("property", id),
+  ]);
+
   const initialValues: Partial<CreatePropertyInput> = {
     name: property.name,
     city: property.city ?? undefined,
     region: property.region ?? undefined,
     house_rules: property.house_rules ?? undefined,
     local_tips: property.local_tips ?? undefined,
-    stocked_items: property.stocked_items ?? undefined,
     wifi_ssid: sensitive?.wifi_ssid ?? undefined,
     wifi_password: sensitive?.wifi_password ?? undefined,
     door_code: sensitive?.door_code ?? undefined,
@@ -53,6 +59,15 @@ export default async function EditPropertyPage({ params }: EditPropertyPageProps
       </header>
       <div className="rounded-card border bg-card p-6 shadow-card">
         <EditPropertyContent propertyId={id} initialValues={initialValues} />
+      </div>
+
+      <div className="mt-4 rounded-card border bg-card p-6 shadow-card">
+        <InventoryManager
+          scope="property"
+          parentId={id}
+          initialInventory={inventory}
+          initialSuggestions={suggestions}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,9 @@
 // app/trip/[token]/page.tsx
 import { TripInfoSection } from "@/components/trip-info-section";
 import { StampBadge } from "@/components/stamp-badge";
+import { InventoryBrowse, SuggestedBrowse } from "@/components/inventory-browse";
+import { inventoryPublicUrl } from "@/lib/storage";
+import type { InventoryItem, SuggestedItem } from "@/lib/schemas/inventory";
 import { validateInviteToken } from "@/lib/trip-access/validate-token";
 import { createServiceClient, createClient } from "@/lib/supabase/server";
 import {
@@ -10,6 +13,7 @@ import {
   ScrollText,
   Lightbulb,
   Package,
+  ClipboardList,
   Lock,
 } from "lucide-react";
 import Link from "next/link";
@@ -90,6 +94,41 @@ export default async function TripViewPage({ params }: TripViewProps) {
     .from("trip_members")
     .select("id, role, joined_at, invited_email, users:user_id(display_name)")
     .eq("trip_id", validation.tripId);
+
+  // Inventory + suggestions (non-sensitive) for the anonymous viewer. Personal /
+  // household packing is intentionally NOT fetched here.
+  const { data: inventoryRows } = await serviceClient
+    .from("trip_inventory_items")
+    .select("id, category, title, quantity, detail, image_path, sort_order")
+    .eq("trip_id", validation.tripId)
+    .is("deleted_at", null)
+    .order("sort_order", { ascending: true });
+
+  const inventory: InventoryItem[] = (inventoryRows ?? []).map((r) => ({
+    id: r.id,
+    category: r.category,
+    title: r.title,
+    quantity: r.quantity,
+    detail: r.detail,
+    image_path: r.image_path,
+    image_url: inventoryPublicUrl(r.image_path),
+    sort_order: r.sort_order,
+  }));
+
+  const { data: suggestedRows } = await serviceClient
+    .from("trip_suggested_items")
+    .select("id, category, title, provided, sort_order")
+    .eq("trip_id", validation.tripId)
+    .is("deleted_at", null)
+    .order("sort_order", { ascending: true });
+
+  const suggestions: SuggestedItem[] = (suggestedRows ?? []).map((r) => ({
+    id: r.id,
+    category: r.category,
+    title: r.title,
+    provided: Boolean(r.provided),
+    sort_order: r.sort_order,
+  }));
 
   const formatDate = (date: string | null) => {
     if (!date) return null;
@@ -179,13 +218,15 @@ export default async function TripViewPage({ params }: TripViewProps) {
             </TripInfoSection>
           )}
 
-          {trip.stocked_items && (trip.stocked_items as string[]).length > 0 && (
-            <TripInfoSection icon={Package} title="Stocked Items">
-              <ul className="grid grid-cols-2 gap-1">
-                {(trip.stocked_items as string[]).map((item: string, i: number) => (
-                  <li key={i} className="text-sm text-ink">• {item}</li>
-                ))}
-              </ul>
+          {inventory.length > 0 && (
+            <TripInfoSection icon={Package} title="What's already here">
+              <InventoryBrowse items={inventory} />
+            </TripInfoSection>
+          )}
+
+          {suggestions.length > 0 && (
+            <TripInfoSection icon={ClipboardList} title="Suggested to bring">
+              <SuggestedBrowse items={suggestions} />
             </TripInfoSection>
           )}
 

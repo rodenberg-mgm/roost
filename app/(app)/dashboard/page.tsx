@@ -2,6 +2,7 @@
 import { EmptyState } from "@/components/empty-state";
 import { HeroTripCard } from "@/components/hero-trip-card";
 import { TripCard } from "@/components/trip-card";
+import { OldTrips } from "@/components/old-trips";
 import { StampBadge } from "@/components/stamp-badge";
 import { SavedToast } from "@/components/saved-toast";
 import { createClient } from "@/lib/supabase/server";
@@ -18,6 +19,7 @@ type TripRow = {
   city: string | null;
   region: string | null;
   deleted_at: string | null;
+  archived_at: string | null;
 };
 
 export default async function DashboardPage() {
@@ -40,18 +42,38 @@ export default async function DashboardPage() {
   // Fetch trips where user is a member
   const { data: memberships } = await supabase
     .from("trip_members")
-    .select("trip_id, role, trips:trip_id(id, name, starts_on, ends_on, city, region, deleted_at)")
+    .select("trip_id, role, trips:trip_id(id, name, starts_on, ends_on, city, region, deleted_at, archived_at)")
     .eq("user_id", user!.id);
 
-  const activeTrips = (memberships || []).filter((m) => {
-    const trip = (Array.isArray(m.trips) ? m.trips[0] : m.trips) as TripRow | null;
+  const tripOf = (m: { trips: unknown }) =>
+    (Array.isArray(m.trips) ? m.trips[0] : m.trips) as TripRow | null;
+
+  // Today as YYYY-MM-DD for date-only "is this trip over?" comparisons.
+  const todayStr = new Date().toLocaleDateString("en-CA"); // en-CA → ISO-like YYYY-MM-DD
+
+  // A trip is "past" once its end (or start, if no end) is before today. TBD
+  // trips (no dates) are never past.
+  const isPast = (t: TripRow) => {
+    const effectiveEnd = t.ends_on || t.starts_on;
+    return !!effectiveEnd && effectiveEnd < todayStr;
+  };
+
+  const liveMemberships = (memberships || []).filter((m) => {
+    const trip = tripOf(m);
     return trip && !trip.deleted_at;
   });
 
-  const tripIds = activeTrips.map((m) => {
-    const trip = (Array.isArray(m.trips) ? m.trips[0] : m.trips) as TripRow;
-    return trip.id;
+  // Active = shown by default. Old = past OR archived, revealed on demand.
+  const activeTrips = liveMemberships.filter((m) => {
+    const t = tripOf(m)!;
+    return !t.archived_at && !isPast(t);
   });
+  const oldMemberships = liveMemberships.filter((m) => {
+    const t = tripOf(m)!;
+    return t.archived_at || isPast(t);
+  });
+
+  const tripIds = liveMemberships.map((m) => tripOf(m)!.id);
 
   // Fetch all members (for counts + hero avatars) in one query
   const memberCounts: Record<string, number> = {};
@@ -108,6 +130,25 @@ export default async function DashboardPage() {
   const heroMembership = sorted[0];
   const restMemberships = sorted.slice(1);
 
+  // Old trips (past or archived), most-recent first, as plain card data for the
+  // client toggle component.
+  const oldTripsData = oldMemberships
+    .map((m) => {
+      const t = tripOf(m)!;
+      return {
+        id: t.id,
+        name: t.name,
+        startsOn: t.starts_on,
+        endsOn: t.ends_on,
+        city: t.city,
+        region: t.region,
+        memberCount: memberCounts[t.id] || 1,
+        role: m.role,
+        archived: !!t.archived_at,
+      };
+    })
+    .sort((a, b) => (b.startsOn || "").localeCompare(a.startsOn || ""));
+
   return (
     <div className="-mx-4 -mt-6 sm:-mx-6">
       <Suspense>
@@ -128,7 +169,7 @@ export default async function DashboardPage() {
               </h1>
             </div>
           </div>
-          {activeTrips.length > 0 && (
+          {liveMemberships.length > 0 && (
             <Link
               href="/trips/new"
               aria-label="Start a trip"
@@ -142,7 +183,7 @@ export default async function DashboardPage() {
 
       {/* Content */}
       <div className="mx-auto max-w-lg px-4 pt-5 sm:max-w-2xl sm:px-6 md:max-w-3xl">
-        {activeTrips.length === 0 ? (
+        {liveMemberships.length === 0 ? (
           <div className="topo-bg rounded-card border">
             <EmptyState
               icon={Map}
@@ -153,48 +194,61 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="space-y-5">
-            {/* Hero trip */}
-            {heroMembership && (() => {
-              const trip = (Array.isArray(heroMembership.trips) ? heroMembership.trips[0] : heroMembership.trips) as TripRow;
-              return (
-                <div className="animate-slide-up">
-                  <HeroTripCard
-                    id={trip.id}
-                    name={trip.name}
-                    dateDisplay={dateDisplayFor(trip)}
-                    location={[trip.city, trip.region].filter(Boolean).join(", ") || null}
-                    memberCount={memberCounts[trip.id] || 1}
-                    memberNames={memberNames[trip.id] || []}
-                    stampLabel={stampFor(trip.starts_on)}
-                  />
-                </div>
-              );
-            })()}
-
-            {/* Remaining trips */}
-            {restMemberships.length > 0 && (
-              <div className="space-y-3">
-                <StampBadge variant="kraft">All Trips</StampBadge>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {restMemberships.map((m) => {
-                    const trip = (Array.isArray(m.trips) ? m.trips[0] : m.trips) as TripRow;
-                    return (
-                      <TripCard
-                        key={trip.id}
+            {activeTrips.length === 0 ? (
+              <div className="topo-bg rounded-card border p-6 text-center">
+                <p className="text-sm text-ink-light">
+                  No upcoming trips. Start a new one, or look back at past trips below.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Hero trip */}
+                {heroMembership && (() => {
+                  const trip = (Array.isArray(heroMembership.trips) ? heroMembership.trips[0] : heroMembership.trips) as TripRow;
+                  return (
+                    <div className="animate-slide-up">
+                      <HeroTripCard
                         id={trip.id}
                         name={trip.name}
-                        startsOn={trip.starts_on}
-                        endsOn={trip.ends_on}
-                        city={trip.city}
-                        region={trip.region}
+                        dateDisplay={dateDisplayFor(trip)}
+                        location={[trip.city, trip.region].filter(Boolean).join(", ") || null}
                         memberCount={memberCounts[trip.id] || 1}
-                        role={m.role}
+                        memberNames={memberNames[trip.id] || []}
+                        stampLabel={stampFor(trip.starts_on)}
                       />
-                    );
-                  })}
-                </div>
-              </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Remaining trips */}
+                {restMemberships.length > 0 && (
+                  <div className="space-y-3">
+                    <StampBadge variant="kraft">All Trips</StampBadge>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {restMemberships.map((m) => {
+                        const trip = (Array.isArray(m.trips) ? m.trips[0] : m.trips) as TripRow;
+                        return (
+                          <TripCard
+                            key={trip.id}
+                            id={trip.id}
+                            name={trip.name}
+                            startsOn={trip.starts_on}
+                            endsOn={trip.ends_on}
+                            city={trip.city}
+                            region={trip.region}
+                            memberCount={memberCounts[trip.id] || 1}
+                            role={m.role}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
+
+            {/* Past + archived trips, hidden by default */}
+            {oldTripsData.length > 0 && <OldTrips trips={oldTripsData} />}
           </div>
         )}
       </div>

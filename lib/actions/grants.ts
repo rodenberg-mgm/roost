@@ -20,7 +20,7 @@ export async function consumeInviteAndJoin(token: string) {
 
   const { data: invite } = await serviceClient
     .from("trip_invites")
-    .select("id, trip_id, email, consumed_at, expires_at")
+    .select("id, trip_id, email, role, consumed_at, expires_at")
     .eq("token", token)
     .single();
 
@@ -46,13 +46,15 @@ export async function consumeInviteAndJoin(token: string) {
     return { error: "Invite expired" };
   }
 
-  // Create trip member
+  // Create trip member in the role the host chose on the invite. Guard against
+  // unexpected values (only co-host/guest are valid invite roles; never 'host').
+  const memberRole = invite.role === "co-host" ? "co-host" : "guest";
   const { error: memberError } = await serviceClient
     .from("trip_members")
     .insert({
       trip_id: invite.trip_id,
       user_id: user.id,
-      role: "guest",
+      role: memberRole,
       invited_email: invite.email,
       joined_at: new Date().toISOString(),
     });
