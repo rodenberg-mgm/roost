@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { createTripSchema, type CreateTripInput } from "@/lib/schemas/trip";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -187,12 +187,22 @@ export async function unarchiveTrip(tripId: string) {
   return { data: { ok: true } };
 }
 
-/** Soft-delete a trip (sets deleted_at). Recoverable only by an admin. */
+/**
+ * Soft-delete a trip (sets deleted_at). Recoverable only by an admin.
+ *
+ * Runs through the service client: the trips SELECT policies require
+ * `deleted_at is null`, and Postgres enforces that an UPDATE leaves the new row
+ * visible under those policies — so the host's own client cannot set deleted_at
+ * (it would make the row invisible, raising "new row violates RLS"). The
+ * requirePrimaryHost check above is the trust boundary, mirroring removeMember /
+ * revokeInvite.
+ */
 export async function deleteTrip(tripId: string) {
   const auth = await requirePrimaryHost(tripId);
   if ("error" in auth) return { error: auth.error };
 
-  const { error } = await auth.supabase
+  const serviceClient = await createServiceClient();
+  const { error } = await serviceClient
     .from("trips")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", tripId);
